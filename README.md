@@ -2,7 +2,7 @@
 
 ## Introduction
 
-LLMPerf is a tool for measuring the performance of large language models (LLMs) such as GPT-3, GPT-4, or similar models. Language models have become increasingly important in various natural language processing tasks, and it's essential to evaluate their performance accurately. LLMPerf provides a framework for conducting performance measurements and benchmarking on these models.
+LLMPerf is a tool for measuring the performance of large language models (LLMs) such as Llama 2, GPT-3, or similar models. Language models have become increasingly important in various natural language processing tasks, and it's essential to evaluate their performance accurately. LLMPerf provides a framework for conducting performance measurements and benchmarking on these models.
 
 ## Features
 
