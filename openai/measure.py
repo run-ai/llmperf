@@ -12,7 +12,7 @@ def single_measure(prompt, max_tokens):
     start = timer()
     completion = openai.Completion.create(
         model=model,
-        echo=True,
+        echo=False,
         prompt=prompt,
         max_tokens=max_tokens,
         temperature=0,
