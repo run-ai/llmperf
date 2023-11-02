@@ -30,7 +30,7 @@ def single_measure(prompt, max_tokens):
             ttft = timer() - start
             itl_start = timer()
         else:
-            total_tokens += c['choices'][0]['tokens']
+            total_tokens += 1
     return ttft, total_tokens, itl_start - start
 
 def measure(prompt, max_tokens, num_iterations):
