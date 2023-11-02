@@ -14,12 +14,13 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 - **Extensibility**: You can easily extend LLMPerf to add custom performance metrics or integrate it with your existing infrastructure for automated testing.
 
-- **Results Visualization**: LLMPerf provides tools for visualizing and analyzing performance results, making it easier to interpret the data and identify areas for improvement.
+- **Reproduction scripts**: You can easily reproduce the results with your own machine
 
 ## Getting Started
 
 ### Prerequisites
 
+- Machine with NVIDIA GPU
 - Python 3.6 or higher
 - Pip (Python package manager)
 
@@ -27,7 +28,7 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 1. Clone the LLMPerf repository:
 
-```git clone https://github.com/your-username/llmperf.git```
+```git clone https://github.com/run-ai/llmperf.git```
 
 2. Navigate to the LLMPerf directory:
 
@@ -39,19 +40,60 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 ### Usage
 
-1. Define your test scenarios: Create custom test scenarios in the `scenarios/` directory. You can specify the input prompts, model configurations, and other relevant parameters.
+#### Run models
 
-2. Run performance tests: Execute performance tests by running LLMPerf with the desired configuration file.
+##### vLLM
+```
+python3 -m vllm.entrypoints.openai.api_server --model [MODEL] --trust-remote-code --dtype [PERCISION]
+```
 
-```python llmperf.py --config config.yml```
+##### RayLLM
+```
+docker run -it --gpus all --shm-size=15gb -p 8000:8000 anyscale/aviary:latest bash
+ray start --head
 
-3. View and analyze results: After tests are complete, you can find performance results in the `results/` directory. Use the provided tools to visualize and analyze the data.
+# Copy the content of rayllm/model.yaml to file model.yaml
 
-4. Customize and extend: You can customize LLMPerf by adding your own metrics or modifying the code to fit your specific use case.
+aviary run --model model.yaml
+```
 
-## Configuration
+##### TensorRT-LLM
+```
+# Prepare for compilation
+git clone https://github.com/NVIDIA/TensorRT-LLM.git
+cd TensorRT-LLM
+git submodule update --init --recursive
+git lfs install
+git lfs pull
 
-LLMPerf is highly configurable. You can define various parameters in the configuration file (`config.yml`) to suit your specific testing needs. The configuration file allows you to set the number of iterations, model selection, and other test-related settings.
+# Compile and build TensorRT-LLM docker
+make -C docker release_build
+
+# Compile engine
+docker run -it --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 tensorrt_llm/release bash
+git lfs install
+git clone MODEL
+mkdir engine
+cd examples/llama/
+python build.py --model_dir /app/tensorrt_llm/Llama-2-7b-hf/ \
+                --dtype PERCISION \
+                --remove_input_padding \
+                --use_gpt_attention_plugin PERCISION \
+                --enable_context_fmha \
+                --use_gemm_plugin PERCISION \
+                --max_output_len 2048 \
+                --output_dir /app/tensorrt_llm/engine/
+
+```
+
+#### Measurement
+
+##### OpenAI compatible API
+
+```
+cd openai
+python measure.py --file [TEXT INPUT FILE] --max_tokens [OUTPUT TO GENERATE]
+```
 
 ## Contributing
 
@@ -63,8 +105,4 @@ LLMPerf is released under the [MIT License](LICENSE). You are free to use, modif
 
 ## Support
 
-If you encounter any issues or have questions about using LLMPerf, please feel free to [open an issue](https://github.com/your-username/llmperf/issues) on the repository.
-
-## Acknowledgments
-
-LLMPerf was developed by [Your Name] and is maintained by a team of contributors. We would like to thank the open-source community for their support and contributions.
+If you encounter any issues or have questions about using LLMPerf, please feel free to [open an issue](https://github.com/run-ai/llmperf/issues) on the repository.
