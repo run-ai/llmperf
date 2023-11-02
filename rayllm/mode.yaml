@@ -1,0 +1,22 @@
+deployment_config:
+  autoscaling_config:
+    min_replicas: 1
+    initial_replicas: 1
+    max_replicas: 1
+  ray_actor_options:
+    resources: {}
+engine_config:
+  model_id: MODEL
+  type: VLLMEngine
+  engine_kwargs:
+    trust_remote_code: true
+    dtype: PERCISION
+  max_total_tokens: 4096
+  generation:
+    prompt_format:
+      system: "<<SYS>>\n{instruction}\n<</SYS>>\n\n"
+      assistant: " {instruction} </s><s> "
+      trailing_assistant: " "
+      user: "[INST] {system}{instruction} [/INST]"
+scaling_config:
+  num_workers: 1
