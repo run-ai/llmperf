@@ -100,16 +100,13 @@ def single_measure(decoder: any,
 
     ttft = 0
     i = 0
-    total_tokens = 0
-    itl_start = 0
+    tpot_start = 0
     for output_ids in enumerate(output_gen_ids):
         i += 1
         if i == 1:
             ttft = timer() - start
-            itl_start = timer()
-        else:
-            total_tokens += 1
-    return ttft, total_tokens - 1, timer() - itl_start
+            tpot_start = timer()
+    return ttft, i - 1, timer() - tpot_start
 
 
 def generate(
@@ -174,19 +171,19 @@ def generate(
                                     streaming=False)
     torch.cuda.synchronize()
     ttft_time = 0
-    total_itl_tokens = 0
-    total_itl_time = 0
+    total_tpot_tokens = 0
+    total_tpot_time = 0
 
     for i in range(iterations):
-        ttft, itl_tokens, itl_time = single_measure(decoder, input_ids, input_lengths, sampling_config)
+        ttft, tpot_tokens, tpot_time = single_measure(decoder, input_ids, input_lengths, sampling_config)
         ttft_time += ttft
-        total_itl_tokens += itl_tokens
-        total_itl_time += itl_time
-        print(f"Iteration {i + 1}: {ttft} seconds, {itl_tokens} ITL tokens in {itl_time} seconds")
+        total_tpot_tokens += tpot_tokens
+        total_tpot_time += tpot_time
+        print(f"Iteration {i + 1}: TTFT: {ttft} seconds, {tpot_tokens} TPOT tokens: {tpot_time} seconds")
 
     average_ttft_time = ttft_time / iterations
-    average_itl_throughput = total_itl_tokens / total_itl_time
-    print(f"Average for {iterations} runs: TTFT: {average_ttft_time} seconds, ITL throughput: {average_itl_throughput} tokens/seconds")
+    average_tpot_throughput = total_tpot_time / total_tpot_tokens
+    print(f"Average for {iterations} runs: TTFT: {average_ttft_time} seconds, TPOT: {average_tpot_throughput} seconds")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

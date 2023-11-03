@@ -22,32 +22,29 @@ def single_measure(prompt, max_tokens):
 
     ttft = 0
     i = 0
-    total_tokens = 0
-    itl_start = 0
+    tpot_start = 0
     for c in completion:
         i += 1
         if i == 1:
             ttft = timer() - start
-            itl_start = timer()
-        else:
-            total_tokens += 1
-    return ttft, total_tokens - 1, timer() - itl_start
+            tpot_start = timer()
+    return ttft, i - 1, timer() - tpot_start
 
 def measure(prompt, max_tokens, num_iterations):
     ttft_time = 0
-    total_itl_tokens = 0
-    total_itl_time = 0
+    total_tpot_tokens = 0
+    total_tpot_time = 0
 
     for i in range(num_iterations):
-        ttft, itl_tokens, itl_time = single_measure(prompt, max_tokens)
+        ttft, tpot_tokens, tpot_time = single_measure(prompt, max_tokens)
         ttft_time += ttft
-        total_itl_tokens += itl_tokens
-        total_itl_time += itl_time
-        print(f"Iteration {i + 1}: {ttft} seconds, {itl_tokens} ITL tokens in {itl_time} seconds")
+        total_tpot_tokens += tpot_tokens
+        total_tpot_time += tpot_time
+        print(f"Iteration {i + 1}: TTFT: {ttft} seconds, {tpot_tokens} TPOT tokens: {tpot_time} seconds")
 
     average_ttft_time = ttft_time / num_iterations
-    average_itl_throughput = total_itl_tokens / total_itl_time
-    print(f"Average for {num_iterations} runs: TTFT: {average_ttft_time} seconds, ITL throughput: {average_itl_throughput} tokens/seconds")
+    average_tpot_throughput = total_tpot_time / total_tpot_tokens
+    print(f"Average for {num_iterations} runs: TTFT: {average_ttft_time} seconds, TPOT: {average_tpot_throughput} seconds")
 
 def read_prompt_from_file(file_path):
     with open(file_path, 'r') as file:
