@@ -86,12 +86,39 @@ def parse_input(input_text: str, tokenizer, end_id: int,
 
     return input_ids, input_lengths
 
+def single_measure(decoder: any,
+                   input_ids: torch.Tensor,
+                   input_lengths: torch.Tensor,
+                   sampling_config: any
+                   ): 
+    start = timer()
+    output_gen_ids = decoder.decode(input_ids,
+                                    input_lengths,
+                                    sampling_config,
+                                    streaming=True)
+    torch.cuda.synchronize()
+
+    ttft = 0
+    i = 0
+    total_tokens = 0
+    itl_start = 0
+    for output_ids in enumerate(output_gen_ids):
+        i += 1
+        if i == 1:
+            ttft = timer() - start
+            itl_start = timer()
+        else:
+            total_tokens += 1
+    return ttft, total_tokens - 1, timer() - itl_start
+
+
 def generate(
     max_output_len: int,
     log_level: str = 'error',
     engine_dir: str = 'llama_outputs',
     file: str = None,
     tokenizer_dir: str = None,
+    iterations: int = None
 ):
     tensorrt_llm.logger.set_level(log_level)
 
@@ -146,24 +173,30 @@ def generate(
                                     sampling_config,
                                     streaming=False)
     torch.cuda.synchronize()
-    start = timer()
-    output_gen_ids = decoder.decode(input_ids,
-                                    input_lengths,
-                                    sampling_config,
-                                    streaming=True)
-    torch.cuda.synchronize()
-    for output_ids in enumerate(output_gen_ids):
-        print(timer() - start)
-        exit()
+    ttft_time = 0
+    total_itl_tokens = 0
+    total_itl_time = 0
+
+    for i in range(iterations):
+        ttft, itl_tokens, itl_time = single_measure(decoder, input_ids, input_lengths, sampling_config)
+        ttft_time += ttft
+        total_itl_tokens += itl_tokens
+        total_itl_time += itl_time
+        print(f"Iteration {i + 1}: {ttft} seconds, {itl_tokens} ITL tokens in {itl_time} seconds")
+
+    average_ttft_time = ttft_time / iterations
+    average_itl_throughput = total_itl_tokens / total_itl_time
+    print(f"Average for {iterations} runs: TTFT: {average_ttft_time} seconds, ITL throughput: {average_itl_throughput} tokens/seconds")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max_output_len', type=int, required=True)
+    parser.add_argument('--max_output_len', type=int, default=128, required=True)
     parser.add_argument('--engine_dir', type=str, default='llama_outputs')
     parser.add_argument('--tokenizer_dir',
                         type=str,
                         default=".",
                         help="Directory containing the tokenizer.model.")
     parser.add_argument("--file", type=str, help="Path to a file containing the prompt.")
+    parser.add_argument("--iterations", type=str, default=10, help="The iterations parameter.")
     args = parser.parse_args()
     generate(**vars(args))
