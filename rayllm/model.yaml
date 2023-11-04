@@ -10,7 +10,7 @@ engine_config:
   type: VLLMEngine
   engine_kwargs:
     trust_remote_code: true
-    dtype: PERCISION
+    dtype: PRECISION
   max_total_tokens: 4096
   generation:
     prompt_format:

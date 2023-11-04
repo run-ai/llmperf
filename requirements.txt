@@ -1,2 +1,2 @@
-openai
-vllm
+openai==0.28.1
+vllm==0.2.1

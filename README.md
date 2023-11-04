@@ -20,7 +20,7 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 ### Prerequisites
 
-- Machine with NVIDIA GPU
+- Machine with NVIDIA GPU (Tested on A100-40GB)
 - Python 3.6 or higher
 - Pip (Python package manager)
 
@@ -44,7 +44,7 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 ##### vLLM
 ```
-python3 -m vllm.entrypoints.openai.api_server --model [MODEL] --trust-remote-code --dtype [PERCISION]
+python3 -m vllm.entrypoints.openai.api_server --model [MODEL] --trust-remote-code --dtype [PRECISION]
 ```
 
 ##### RayLLM
@@ -90,11 +90,11 @@ python build.py --model_dir /app/tensorrt_llm/Llama-2-7b-hf/ \
 
 #### Measurement
 
-##### OpenAI compatible API
+##### OpenAI compatible API (vLLM / RayLLM)
 
 ```
 cd openai
-python measure.py --file [TEXT INPUT FILE] --max_tokens [OUTPUT TO GENERATE]
+python openai/llmperf.py --file [TEXT INPUT FILE] --max_tokens [OUTPUT TO GENERATE]
 ```
 
 ## Contributing
