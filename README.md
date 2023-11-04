@@ -82,6 +82,8 @@ python build.py --model_dir /app/tensorrt_llm/Llama-2-7b-hf/ \
                 --enable_context_fmha \
                 --use_gemm_plugin PERCISION \
                 --max_output_len 2048 \
+                --use_inflight_batching \
+                --paged_kv_cache \
                 --output_dir /app/tensorrt_llm/engine/
 
 ```
