@@ -8,13 +8,19 @@ import math
 from timeit import default_timer as timer
 import plotille
 from transformers import AutoTokenizer
+import threading
+
+from vllm.engine.arg_utils import AsyncEngineArgs
+from vllm.engine.async_llm_engine import AsyncLLMEngine
+from vllm.outputs import RequestOutput
+from vllm.utils import random_uuid
+from vllm.sampling_params import SamplingParams
 
 openai.api_key = "YOUR_API_KEY"
 openai.api_base = "http://localhost:8000/v1"
 
-models = openai.Model.list()
-model = models["data"][0]["id"]
-tokenizer = AutoTokenizer.from_pretrained(model)
+tokenizer = None
+engine = None
 
 start_time = 0
 tokens_arrived = 0  # Global variable to store the count of tokens arrived
@@ -46,24 +52,25 @@ async def send_requests_periodically(reqs, interval_seconds=1):
         try:
             active_requests += 1
             remaining_requests -= 1
-            asyncio.create_task(process_request(req))
+            my_thread = threading.Thread(target=process_request, args=(req,))
+            my_thread.start()
             await asyncio.sleep(interval_seconds)
         except Exception as e:
             print(f"Error: {e}")
 
-async def process_request(req):
+def process_request(req):
     global tokens_arrived, active_requests  # Declare the global variables
-
+    request_id = f"cmpl-{random_uuid()}"
     try:
-        response = await openai.Completion.acreate(
-            model=model,
-            prompt=req,
+        sampling_params = SamplingParams(
             temperature=0,
-            n=1,
-            stop=None,
-            echo=False,
         )
-        tokens_arrived += response.usage.completion_tokens  # Increment the count of tokens arrived
+        result_generator = engine.generate(req, sampling_params, request_id)
+        final_res: RequestOutput = None
+        for res in result_generator:
+            final_res = res
+        num_generated_tokens = sum(len(output.token_ids) for output in final_res.outputs)
+        tokens_arrived += num_generated_tokens  # Increment the count of tokens arrived
         active_requests -= 1  # Decrement the count of active requests
     except aiohttp.ClientError as e:
         print(f"Request failed with error: {e}")
@@ -88,14 +95,21 @@ async def print_metrics_periodically(interval_seconds):
         await asyncio.sleep(interval_seconds)
 
 async def main():
-    global start_time, remaining_requests
+    global start_time, remaining_requests, engine, tokenizer
 
     parser = argparse.ArgumentParser(description="Async OpenAI Requests")
     parser.add_argument("--print_interval", type=float, default=2, help="Interval in seconds for printing responses")
     parser.add_argument("--qps", type=float, default=4, help="Interval in seconds for printing responses")
     parser.add_argument("--samples", type=int, default=100, help="Number of samples")
     parser.add_argument("--dataset", type=str, help="Dataset file")
+    parser.add_argument("--host", type=str, default=None)
+    parser.add_argument("--port", type=int, default=8000)
+    parser = AsyncEngineArgs.add_cli_args(parser)
+
     args = parser.parse_args()
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    engine_args = AsyncEngineArgs.from_cli_args(args)
+    engine = AsyncLLMEngine.from_engine_args(engine_args)
 
     requests = sample_requests(args.dataset, args.samples)
     remaining_requests = len(requests)
