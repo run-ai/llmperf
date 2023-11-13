@@ -22,6 +22,7 @@ def single_measure(prompt, max_tokens, batch_size):
     sampling_config = SamplingConfig(end_id=EOS_TOKEN,
                                      pad_id=PAD_TOKEN,
                                      num_beams=1,
+                                     min_length=max_tokens,
                                      temperature=0.0)
     input_ids_g, input_len_g = parse_input(prompt, tokenizer, EOS_TOKEN, remove_input_paddings, batch_size)
     start = timer()
