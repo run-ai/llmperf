@@ -279,21 +279,24 @@ public:
         std::optional<bool> enableTrtOverlap, std::shared_ptr<Recorder> recorder,
         std::optional<uint64_t> terminateReqId)
     {
+        mResponseCounter = 0;
         const TrtGptModelOptionalParams& optionalParams = TrtGptModelOptionalParams(
             maxNumSequences, maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap);
         mBatchManager = std::make_shared<GptManager>(
             trtEnginePath, modelType, maxBeamWidth, schedulerPolicy,
-            [this](int max_num_requests) { return getInferenceRequests(max_num_requests); },
+            [this](int max_num_requests) { std::cout << "Num request to accept: " << max_num_requests << std::endl; return getInferenceRequests(max_num_requests); },
             [this](uint64_t requestId, std::list<NamedTensor> response_tensors, bool final_response,
-                const std::string& errMsg)
-            { return sendResponse(requestId, response_tensors, final_response, errMsg); },
-            nullptr, nullptr, optionalParams, terminateReqId);
+                const std::string& errMsg) { if (final_response) { mResponseCounter++; } return sendResponse(requestId, response_tensors, final_response, errMsg); },
+            nullptr, 
+            [this](const std::string& jsonStats) {std::cout << "Received JSON stats: " << jsonStats << std::endl;},
+            optionalParams, terminateReqId);
         mRecorder = recorder;
         mTerminateReqId = terminateReqId;
     }
 
     ~GptServer()
     {
+        std::cout << "Num Response Counter: " << mResponseCounter << std::endl;
         mWorkItemsQueue.clear();
     }
 
@@ -434,6 +437,7 @@ private:
     std::shared_ptr<Recorder> mRecorder;
     WorkItemsQueue mWorkItemsQueue;
     std::optional<uint64_t> mTerminateReqId;
+    int mResponseCounter;
 
 }; // class GptServer
 
