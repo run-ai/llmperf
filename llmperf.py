@@ -3,6 +3,7 @@ import openai_perf
 import vllm_perf
 import tgi_perf
 import triton_perf
+import asyncio
 from vllm.engine.arg_utils import AsyncEngineArgs
 
 def read_prompt_from_file(file_path):
@@ -14,6 +15,14 @@ def run_func_n_times(fn, iterations):
     total = 0
     for i in range(iterations):
         value = fn()
+        total += value
+        print(f"Iteration {i}: {value}")
+    print(f"Average: {total/iterations}")
+
+async def async_run_func_n_times(fn, iterations):
+    total = 0
+    for i in range(iterations):
+        value = await fn()
         total += value
         print(f"Iteration {i}: {value}")
     print(f"Average: {total/iterations}")
@@ -42,7 +51,7 @@ def run_tpot(args):
         measurer = tgi_perf.tpot_measurer(prompt, args)
     elif args.engine == "triton":
         measurer = triton_perf.tpot_measurer(prompt, args)
-    run_func_n_times(measurer, args.iterations)
+    asyncio.run(async_run_func_n_times(measurer, args.iterations))
 
 
 if __name__ == "__main__":

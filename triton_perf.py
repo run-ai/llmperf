@@ -51,7 +51,7 @@ def ttft_measurer(prompt, args):
         prepare_tensor("beam_width", beam_width_data),
     ]
 
-    def triton_wrapper():
+    async def triton_wrapper():
         user_data = UserData()
         i = 0
         start = timer()
