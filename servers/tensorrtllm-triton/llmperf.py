@@ -19,7 +19,6 @@ from utils import utils
 MODEL_NAME = "ensemble"
 
 class UserData:
-
     def __init__(self):
         self._completed_requests = queue.Queue()
 

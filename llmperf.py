@@ -30,6 +30,19 @@ def run_ttft(args):
         measurer = triton_perf.ttft_measurer(prompt, args)
     run_func_n_times(measurer, args.iterations)
 
+def run_tpot(args):
+    prompt = read_prompt_from_file(args.prompt_file)
+    measurer = None
+    if args.engine == "vllm":
+        measurer = vllm_perf.tpot_measurer(prompt, args)
+    elif args.engine == "openai":
+        measurer = openai_perf.tpot_measurer(prompt, args)
+    elif args.engine == "tgi":
+        measurer = tgi_perf.tpot_measurer(prompt, args)
+    elif args.engine == "triton":
+        measurer = triton_perf.tpot_measurer(prompt, args)
+    run_func_n_times(measurer, args.iterations)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLMPerf tools to measure LLM performance")
@@ -49,3 +62,5 @@ if __name__ == "__main__":
 
     if args.command == "ttft":
         run_ttft(args)
+    elif args.command == "tpot":
+        run_tpot(args)
