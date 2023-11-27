@@ -94,7 +94,7 @@ def run_rate_throughput(args):
         return
     
     async def wrapper():
-        await run_func_periodically(measurer, args.qps, args.total_requests)
+        return await run_func_periodically(measurer, args.qps, args.total_requests)
     asyncio.run(async_run_func_n_times(wrapper, args.iterations))
 
 if __name__ == "__main__":
