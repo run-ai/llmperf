@@ -41,7 +41,7 @@ def tpot_measurer(prompt, args):
                         stream=True,
             )
         i = 0
-        async for _ in completion:
+        for _ in completion:
             if i == 0:
                 start = timer()
             i += 1
