@@ -3,6 +3,7 @@ import openai_perf
 import vllm_perf
 import tgi_perf
 import triton_perf
+from vllm.engine.arg_utils import AsyncEngineArgs
 
 def read_prompt_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -63,6 +64,7 @@ if __name__ == "__main__":
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     tpot_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
+    tpot_parser = AsyncEngineArgs.add_cli_args(tpot_parser)
     args = parser.parse_args()
 
     if args.command == "ttft":
