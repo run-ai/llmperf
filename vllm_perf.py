@@ -73,3 +73,20 @@ def static_batch_measurer(prompt, args):
         tokens_count = args.batch_size * args.output_tokens
         return tokens_count / total_time
     return vllm_wrapper
+
+def rate_throughput_measurer(prompt, args):
+    engine_args = AsyncEngineArgs.from_cli_args(args)
+    llm = AsyncLLMEngine.from_engine_args(engine_args)
+    async def vllm_wrapper():
+        sampling_params = SamplingParams(
+                temperature=0.0,
+                ignore_eos=True,
+                max_tokens=args.output_tokens,
+            )
+        request_id = random_uuid()
+        results_generator = llm.generate(prompt, sampling_params, request_id)
+        async for _ in results_generator:
+            pass
+        return args.output_tokens
+    return vllm_wrapper
+
