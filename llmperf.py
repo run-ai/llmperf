@@ -58,6 +58,11 @@ if __name__ == "__main__":
 
 
     tpot_parser = subparsers.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
+    ttft_parser.add_argument("--model", type=str, default="", help="The model.")
+    ttft_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    ttft_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
+    ttft_parser.add_argument("--output_tokens", type=str, help="Number of tokens to retrieve")
+    ttft_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     args = parser.parse_args()
 
     if args.command == "ttft":
