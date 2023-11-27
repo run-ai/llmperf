@@ -1,4 +1,5 @@
 import requests
+import aiohttp
 import tritonclient.grpc as grpcclient
 from tritonclient.utils import InferenceServerException, np_to_triton_dtype
 from timeit import default_timer as timer
@@ -79,4 +80,21 @@ def ttft_measurer(prompt, args):
             else:
                 result.as_numpy('text_output')
             return (timer() - start) / (i - 1)
+    return triton_wrapper
+
+def rate_throughput_measurer(prompt, args):
+    server = args.server
+    model = args.model
+    conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+    session = aiohttp.ClientSession(connector=conn)
+    async def triton_wrapper():
+        req = {
+            "text_input": prompt,
+            "max_tokens": args.output_tokens,
+            "bad_words": "",
+            "stop_words": ""
+        }
+        async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
+            _ = await response.text()
+        return args.output_tokens
     return triton_wrapper

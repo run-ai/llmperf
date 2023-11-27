@@ -47,3 +47,24 @@ def tpot_measurer(prompt, args):
             i += 1
         return (timer() - start) / (i - 1)
     return openai_wrapper
+
+def rate_throughput_measurer(prompt, args):
+    openai.api_key = args.api_key
+    openai.api_base = args.api_base
+    models = openai.Model.list()
+    model = models["data"][0]["id"]
+
+    async def openai_wrapper():
+        completion = await openai.Completion.acreate(
+            model=model,
+                        echo=False,
+                        prompt=prompt,
+                        max_tokens=args.output_tokens,
+                        temperature=0,
+                        n=1,
+                        stream=True,
+            )
+        for _ in completion:
+            pass
+        return args.output_tokens
+    return openai_wrapper

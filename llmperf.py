@@ -89,6 +89,12 @@ def run_rate_throughput(args):
     measurer = None
     if args.engine == "vllm":
         measurer = vllm_perf.rate_throughput_measurer(prompt, args)
+    elif args.engine == "openai":
+        measurer = openai_perf.rate_throughput_measurer(prompt, args)
+    elif args.engine == "tgi":
+        measurer = tgi_perf.rate_throughput_measurer(prompt, args)
+    elif args.engine == "triton":
+        measurer = triton_perf.rate_throughput_measurer(prompt, args)
     else:
         print(f"Rate throughput test not implemented for {args.engine}")
         return
