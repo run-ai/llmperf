@@ -134,7 +134,7 @@ if __name__ == "__main__":
     stb_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     stb_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     stb_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
-    stb_parser.add_argument("--batch_size", type=int, default=128, help="Number of sequences to batch")
+    stb_parser.add_argument("--total_requests", type=int, default=128, help="Number of requests to send in total")
     args = parser.parse_args()
 
 
