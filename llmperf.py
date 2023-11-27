@@ -38,6 +38,9 @@ def run_ttft(args):
         measurer = tgi_perf.ttft_measurer(prompt, args)
     elif args.engine == "triton":
         measurer = triton_perf.ttft_measurer(prompt, args)
+    else:
+        print(f"TTFT test not implemented for {args.engine}")
+        return
     run_func_n_times(measurer, args.iterations)
 
 def run_tpot(args):
@@ -51,7 +54,20 @@ def run_tpot(args):
         measurer = tgi_perf.tpot_measurer(prompt, args)
     elif args.engine == "triton":
         measurer = triton_perf.tpot_measurer(prompt, args)
+    else:
+        print(f"TPOT test not implemented for {args.engine}")
+        return
     asyncio.run(async_run_func_n_times(measurer, args.iterations))
+
+def run_static_batch(args):
+    prompt = read_prompt_from_file(args.prompt_file)
+    measurer = None
+    if args.engine == "vllm":
+        measurer = vllm_perf.static_batch_measurer(prompt, args)
+    else:
+        print(f"Static batch test not implemented for {args.engine}")
+        return
+    run_func_n_times(measurer, args.iterations)
 
 
 if __name__ == "__main__":
@@ -78,7 +94,16 @@ if __name__ == "__main__":
     tpot_parser = AsyncEngineArgs.add_cli_args(tpot_parser)
     args = parser.parse_args()
 
+    stb_parser = subparsers.add_parser("static_batch", help="Measure throughput in static batch")
+    stb_parser.add_argument("--model", type=str, default="", help="The model.")
+    stb_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    stb_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
+    stb_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
+    stb_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
+
     if args.command == "ttft":
         run_ttft(args)
     elif args.command == "tpot":
         run_tpot(args)
+    elif args.command == "static_batch":
+        run_static_batch(args)
