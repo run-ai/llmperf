@@ -19,5 +19,5 @@ python tpot.py --model NousResearch/Llama-2-7b-hf --dtype DTYPE --prompt_file PR
 
 ## Static batch throughput
 ```
-python exp3.py --model NousResearch/Llama-2-7b-hf --dtype DTYPE --prompt_file .PROMPT_FILE --output_tokens X --batch_size BATCH_SIZE
+python exp3.py --model NousResearch/Llama-2-7b-hf --dtype DTYPE --prompt_file PROMPT_FILE --output_tokens X --batch_size BATCH_SIZE
 ```
