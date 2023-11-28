@@ -141,21 +141,27 @@ def run_rate_sampled_throughput(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLMPerf tools to measure LLM performance")
-    parser.add_argument("--engine", type=str, default="vllm", help="The engine (vllm, openai, tgi)")
 
-    subparsers = parser.add_subparsers(title="Commands", dest="command", required=True)
-
-    ttft_parser = subparsers.add_parser("ttft", help="Measure Time To First Token (TTFT)")
-    ttft_parser.add_argument("--model", type=str, default="", help="The model.")
-    ttft_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    test_parser = parser.add_subparsers(title="Test", dest="test", required=True)
+    
+    ttft_parser = test_parser.add_parser("ttft", help="Measure Time To First Token (TTFT)")
     ttft_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     ttft_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
-    ttft_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
-    ttft_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
-    ttft_parser.add_argument("--triton_server", type=str, default="http://localhost:8000/", help="The OpenAI Server URL")
+
+    ttft_engine_parser = ttft_parser.add_subparsers("Engine", dest="engine", required=True)
+    ttft_vllm_parser = ttft_engine_parser.add_parser("vllm", help="vLLM Engine")
+    ttft_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
+    ttft_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+
+    ttft_openai_parser = ttft_engine_parser.add_parser("openai", help="OpenAI Engine")
+    ttft_openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
+    ttft_openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
+
+    ttft_triton_parser = ttft_engine_parser.add_parser("triton", help="Triton Engine")
+    ttft_triton_parser.add_argument("--triton_server", type=str, default="http://localhost:8000/", help="The OpenAI Server URL")
 
 
-    tpot_parser = subparsers.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
+    tpot_parser = test_parser.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
     tpot_parser.add_argument("--model", type=str, default="", help="The model.")
     tpot_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
@@ -164,7 +170,7 @@ if __name__ == "__main__":
     tpot_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
     tpot_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
 
-    stb_parser = subparsers.add_parser("static_batch_throughput", help="Measure throughput in static batch")
+    stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput in static batch")
     stb_parser.add_argument("--model", type=str, default="", help="The model.")
     stb_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     stb_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
@@ -172,7 +178,7 @@ if __name__ == "__main__":
     stb_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     stb_parser.add_argument("--batch_size", type=int, default=128, help="Number of sequences to batch")
 
-    rth_parser = subparsers.add_parser("rate_throughput", help="Measure throughput with sending requests at constant rate")
+    rth_parser = test_parser.add_parser("rate_throughput", help="Measure throughput with sending requests at constant rate")
     rth_parser.add_argument("--model", type=str, default="", help="The model.")
     rth_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     rth_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
@@ -182,7 +188,7 @@ if __name__ == "__main__":
     rth_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
     rth_parser.add_argument("--batch_size", type=int, default=256, help="The batch size")
 
-    rst_parser = subparsers.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
+    rst_parser = test_parser.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
     rst_parser.add_argument("--model", type=str, default="", help="The model.")
     rst_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     rst_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
@@ -193,13 +199,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    if args.command == "ttft":
+    if args.test == "ttft":
         run_ttft(args)
-    elif args.command == "tpot":
+    elif args.test == "tpot":
         run_tpot(args)
-    elif args.command == "static_batch_throughput":
+    elif args.test == "static_batch_throughput":
         run_static_batch(args)
-    elif args.command == "rate_throughput":
+    elif args.test == "rate_throughput":
         run_rate_throughput(args)
-    elif args.command == "rate_sampled_throughput":
+    elif args.test == "rate_sampled_throughput":
         run_rate_sampled_throughput(args)
