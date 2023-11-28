@@ -43,13 +43,13 @@ async def send_request_periodically(task, qps, total):
     elapsed = timer() - start
     return total_tokens / elapsed
 
-async def send_sampled_request_periodically(task, samples, qps, total):
+async def send_sampled_request_periodically(request, samples, qps, total):
     tasks = []
     start = timer()
     i = 0
     for _ in range(math.floor(total/qps)):
         for _ in range(qps):
-            task = asyncio.create_task(task(samples[i]))
+            task = asyncio.create_task(request(samples[i]))
             tasks.append(task)
             i += 1
         await asyncio.sleep(1)
