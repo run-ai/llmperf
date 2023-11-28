@@ -28,9 +28,7 @@ def ttft_measurer(prompt, args):
             "stop_words": ""
         }
         start = timer()
-        print(f"{server}/v2/models/{model}/generate")
         res = requests.post(f"{server}/v2/models/{model}/generate", json=req)
-        print(res)
         return timer() - start
     return single_request
 
@@ -68,7 +66,7 @@ def tpot_measurer(prompt, args):
                     start = timer()
                 user_data._completed_requests.put(result)
         client.start_stream(callback=partial(callback, user_data))
-        client.async_stream_infer(args.model, inputs, request_id=1)
+        client.async_stream_infer(args.model, inputs, request_id=str(1))
         client.stop_stream()
         while True:
             try:
