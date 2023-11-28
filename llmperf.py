@@ -6,7 +6,6 @@ import triton_perf
 import asyncio
 import math
 import json
-from vllm.engine.arg_utils import AsyncEngineArgs
 from timeit import default_timer as timer
 
 def read_prompt_from_file(file_path):
@@ -195,13 +194,12 @@ if __name__ == "__main__":
     add_engines_parser(rth_parser, True)
 
     rst_parser = test_parser.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
-    rst_parser.add_argument("--model", type=str, default="", help="The model.")
-    rst_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     rst_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
     rst_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
     rst_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
     rst_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
-    rst_parser.add_argument("--batch_size", type=int, default=256, help="The batch size")
+    add_engines_parser(rst_parser, True)
+    
     args = parser.parse_args()
 
 
