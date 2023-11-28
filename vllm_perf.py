@@ -102,8 +102,13 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    engine_args = AsyncEngineArgs.from_cli_args(args)
-    llm = AsyncLLMEngine.from_engine_args(engine_args)
+    engineArgs = AsyncEngineArgs(args.model)
+    engineArgs.trust_remote_code = True
+    engineArgs.dtype = args.dtype
+    engineArgs.max_num_seqs = args.batch_size
+    engineArgs.disable_log_stats = True
+    engineArgs.disable_log_requests = True
+    llm = AsyncLLMEngine.from_engine_args(engineArgs)
     async def single_request(sample):
         sampling_params = SamplingParams(
                 temperature=0.0,
