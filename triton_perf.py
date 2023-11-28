@@ -18,7 +18,7 @@ def prepare_tensor(name, input):
     return t
 
 def ttft_measurer(prompt, args):
-    server = args.server
+    server = args.http_server
     model = args.model
     def single_request():
         req = {
@@ -33,7 +33,7 @@ def ttft_measurer(prompt, args):
     return single_request
 
 def tpot_measurer(prompt, args):
-    client = grpcclient.InferenceServerClient(url=args.server)
+    client = grpcclient.InferenceServerClient(url=args.grpc_server)
     input0 = [[prompt]]
     input0_data = np.array(input0).astype(object)
     output0_len = np.ones_like(input0).astype(np.uint32) * args.output_tokens
@@ -84,7 +84,7 @@ def tpot_measurer(prompt, args):
     return single_request
 
 def rate_throughput_measurer(prompt, args):
-    server = args.server
+    server = args.http_server
     model = args.model
     conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
     session = aiohttp.ClientSession(connector=conn)
@@ -101,7 +101,7 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    server = args.server
+    server = args.http_server
     model = args.model
     conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
     session = aiohttp.ClientSession(connector=conn)

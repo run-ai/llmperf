@@ -151,7 +151,8 @@ def add_engines_parser(base_parser):
 
     triton_parser = engine_parser.add_parser("triton", help="Triton Engine")
     triton_parser.add_argument("--model", type=str, default="ensemble", help="The model.")
-    triton_parser.add_argument("--server", type=str, default="http://localhost:8000", help="The Triton Server URL")
+    triton_parser.add_argument("--http_server", type=str, default="http://localhost:8000", help="The Triton Server URL")
+    triton_parser.add_argument("--grpc_server", type=str, default="localhost:8001", help="The Triton gRPC Server URL")
 
     tgi_parser = engine_parser.add_parser("tgi", help="Text-generation-inference Engine")
     tgi_parser.add_argument("--server", type=str, default="http://127.0.0.1:80/", help="The TGI Server URL")
