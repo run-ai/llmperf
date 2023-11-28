@@ -175,12 +175,14 @@ if __name__ == "__main__":
     add_engines_parser(tpot_parser)
 
     stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput in static batch")
-    stb_parser.add_argument("--model", type=str, default="", help="The model.")
-    stb_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     stb_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     stb_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     stb_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     stb_parser.add_argument("--batch_size", type=int, default=128, help="Number of sequences to batch")
+    stb_engine_parser = stb_parser.add_subparsers(title="Engine", dest="engine", required=True)
+    stb_vllm_parser = stb_engine_parser.add_parser("vllm", help="vLLM Engine")
+    stb_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
+    stb_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
 
     rth_parser = test_parser.add_parser("rate_throughput", help="Measure throughput with sending requests at constant rate")
     rth_parser.add_argument("--model", type=str, default="", help="The model.")
