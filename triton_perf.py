@@ -105,9 +105,9 @@ def rate_throughput_measurer(prompt, args):
 def sample_rate_throughput_measurer(args):
     server = args.http_server
     model = args.model
-    conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
-    session = aiohttp.ClientSession(connector=conn)
     async def single_request(sample):
+        conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+        session = aiohttp.ClientSession(connector=conn)
         req = {
             "text_input": sample["prompt"],
             "max_tokens": sample["output_len"],
@@ -116,5 +116,7 @@ def sample_rate_throughput_measurer(args):
         }
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
             _ = await response.text()
+        session.close()
+        conn.close()
         return sample["output_len"]
     return single_request
