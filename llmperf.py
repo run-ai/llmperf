@@ -5,6 +5,7 @@ import tgi_perf
 import triton_perf
 import asyncio
 import math
+import json
 from vllm.engine.arg_utils import AsyncEngineArgs
 from timeit import default_timer as timer
 
@@ -13,29 +14,44 @@ def read_prompt_from_file(file_path):
         prompt = file.read()
     return prompt
 
-def run_func_n_times(fn, iterations):
+def run_test_n_times(test, n):
     total = 0
-    for i in range(iterations):
-        value = fn()
+    for i in range(n):
+        value = test()
         total += value
         print(f"Iteration {i}: {value}")
-    print(f"Average: {total/iterations}")
+    print(f"Average: {total/n}")
 
-async def async_run_func_n_times(fn, iterations):
+async def async_run_test_n_times(test, n):
     total = 0
-    for i in range(iterations):
-        value = await fn()
+    for i in range(n):
+        value = await test()
         total += value
         print(f"Iteration {i}: {value}")
-    print(f"Average: {total/iterations}")
+    print(f"Average: {total/n}")
 
-async def run_func_periodically(fn, qps, total):
+async def send_request_periodically(task, qps, total):
     tasks = []
     start = timer()
     for _ in range(math.floor(total/qps)):
         for _ in range(qps):
-            task = asyncio.create_task(fn())
+            task = asyncio.create_task(task())
             tasks.append(task)
+        await asyncio.sleep(1)
+    results = await asyncio.gather(*tasks)
+    total_tokens = sum(results)
+    elapsed = timer() - start
+    return total_tokens / elapsed
+
+async def send_sampled_request_periodically(task, samples, qps, total):
+    tasks = []
+    start = timer()
+    i = 0
+    for _ in range(math.floor(total/qps)):
+        for _ in range(qps):
+            task = asyncio.create_task(task(samples[i]))
+            tasks.append(task)
+            i += 1
         await asyncio.sleep(1)
     results = await asyncio.gather(*tasks)
     total_tokens = sum(results)
@@ -56,7 +72,7 @@ def run_ttft(args):
     else:
         print(f"TTFT test not implemented for {args.engine}")
         return
-    run_func_n_times(measurer, args.iterations)
+    run_test_n_times(measurer, args.iterations)
 
 def run_tpot(args):
     prompt = read_prompt_from_file(args.prompt_file)
@@ -72,7 +88,7 @@ def run_tpot(args):
     else:
         print(f"TPOT test not implemented for {args.engine}")
         return
-    asyncio.run(async_run_func_n_times(measurer, args.iterations))
+    asyncio.run(async_run_test_n_times(measurer, args.iterations))
 
 def run_static_batch(args):
     prompt = read_prompt_from_file(args.prompt_file)
@@ -82,7 +98,7 @@ def run_static_batch(args):
     else:
         print(f"Static batch test not implemented for {args.engine}")
         return
-    run_func_n_times(measurer, args.iterations)
+    run_test_n_times(measurer, args.iterations)
 
 def run_rate_throughput(args):
     prompt = read_prompt_from_file(args.prompt_file)
@@ -100,8 +116,28 @@ def run_rate_throughput(args):
         return
     
     async def wrapper():
-        return await run_func_periodically(measurer, args.qps, args.total_requests)
-    asyncio.run(async_run_func_n_times(wrapper, args.iterations))
+        return await send_request_periodically(measurer, args.qps, args.total_requests)
+    asyncio.run(async_run_test_n_times(wrapper, args.iterations))
+
+def run_rate_sampled_throughput(args):
+    with open(args.dataset, 'r') as file:
+        samples = json.load(file)
+    measurer = None
+    if args.engine == "vllm":
+        measurer = vllm_perf.sample_rate_throughput_measurer(args)
+    elif args.engine == "openai":
+        measurer = openai_perf.sample_rate_throughput_measurer(args)
+    elif args.engine == "tgi":
+        measurer = tgi_perf.sample_rate_throughput_measurer(args)
+    elif args.engine == "triton":
+        measurer = triton_perf.sample_rate_throughput_measurer(args)
+    else:
+        print(f"Rate sampled throughput test not implemented for {args.engine}")
+        return
+    
+    async def wrapper():
+        return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
+    asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLMPerf tools to measure LLM performance")
@@ -116,6 +152,7 @@ if __name__ == "__main__":
     ttft_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     ttft_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
     ttft_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
+    ttft_parser.add_argument("--triton_server", type=str, default="http://localhost:8000/", help="The OpenAI Server URL")
 
 
     tpot_parser = subparsers.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
@@ -152,3 +189,5 @@ if __name__ == "__main__":
         run_static_batch(args)
     elif args.command == "rate_throughput":
         run_rate_throughput(args)
+    elif args.command == "rate_sampled-throughput":
+        run_rate_sampled_throughput(args)

@@ -7,7 +7,7 @@ def ttft_measurer(prompt, args):
     models = openai.Model.list()
     model = models["data"][0]["id"]
 
-    def openai_wrapper():
+    def single_request():
         start = timer()
         completion = openai.Completion.create(
             model=model,
@@ -21,7 +21,7 @@ def ttft_measurer(prompt, args):
         for _ in completion:
             pass
         return timer() - start
-    return openai_wrapper
+    return single_request
 
 def tpot_measurer(prompt, args):
     openai.api_key = args.api_key
@@ -29,7 +29,7 @@ def tpot_measurer(prompt, args):
     models = openai.Model.list()
     model = models["data"][0]["id"]
 
-    async def openai_wrapper():
+    async def single_request():
         start = timer()
         completion = openai.Completion.create(
             model=model,
@@ -46,7 +46,7 @@ def tpot_measurer(prompt, args):
                 start = timer()
             i += 1
         return (timer() - start) / (i - 1)
-    return openai_wrapper
+    return single_request
 
 def rate_throughput_measurer(prompt, args):
     openai.api_key = args.api_key
@@ -54,7 +54,7 @@ def rate_throughput_measurer(prompt, args):
     models = openai.Model.list()
     model = models["data"][0]["id"]
 
-    async def openai_wrapper():
+    async def single_request():
         completion = await openai.Completion.acreate(
             model=model,
                         echo=False,
@@ -67,4 +67,25 @@ def rate_throughput_measurer(prompt, args):
         for _ in completion:
             pass
         return args.output_tokens
-    return openai_wrapper
+    return single_request
+
+def sample_rate_throughput_measurer(args):
+    openai.api_key = args.api_key
+    openai.api_base = args.api_base
+    models = openai.Model.list()
+    model = models["data"][0]["id"]
+
+    async def single_request(sample):
+        completion = await openai.Completion.acreate(
+            model=model,
+                        echo=False,
+                        prompt=sample["prompt"],
+                        max_tokens=sample["output_len"],
+                        temperature=0,
+                        n=1,
+                        stream=True,
+            )
+        for _ in completion:
+            pass
+        return sample["output_len"]
+    return single_request

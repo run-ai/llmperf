@@ -11,7 +11,7 @@ def ttft_measurer(prompt, args):
         dtype=args.dtype,
     )
     tokenizer = llm.get_tokenizer()
-    def vllm_wrapper():
+    def single_request():
         sampling_params = SamplingParams(
                 temperature=0.0,
                 ignore_eos=True,
@@ -26,12 +26,12 @@ def ttft_measurer(prompt, args):
         start = timer()
         llm._run_engine(use_tqdm=True)
         return timer() - start
-    return vllm_wrapper
+    return single_request
 
 def tpot_measurer(prompt, args):
     engine_args = AsyncEngineArgs.from_cli_args(args)
     llm = AsyncLLMEngine.from_engine_args(engine_args)
-    async def vllm_wrapper():
+    async def single_request():
         sampling_params = SamplingParams(
                 temperature=0.0,
                 ignore_eos=True,
@@ -45,7 +45,7 @@ def tpot_measurer(prompt, args):
                 start = timer()
             i += 1
         return (timer() - start) / (i - 1)
-    return vllm_wrapper
+    return single_request
 
 def static_batch_measurer(prompt, args):
     llm = LLM(
@@ -54,7 +54,7 @@ def static_batch_measurer(prompt, args):
         dtype=args.dtype,
     )
     tokenizer = llm.get_tokenizer()
-    def vllm_wrapper():
+    def single_request():
         sampling_params = SamplingParams(
                 temperature=0.0,
                 ignore_eos=True,
@@ -72,12 +72,12 @@ def static_batch_measurer(prompt, args):
         total_time = timer() - start
         tokens_count = args.batch_size * args.output_tokens
         return tokens_count / total_time
-    return vllm_wrapper
+    return single_request
 
 def rate_throughput_measurer(prompt, args):
     engine_args = AsyncEngineArgs.from_cli_args(args)
     llm = AsyncLLMEngine.from_engine_args(engine_args)
-    async def vllm_wrapper():
+    async def single_request():
         sampling_params = SamplingParams(
                 temperature=0.0,
                 ignore_eos=True,
@@ -88,5 +88,21 @@ def rate_throughput_measurer(prompt, args):
         async for _ in results_generator:
             pass
         return args.output_tokens
-    return vllm_wrapper
+    return single_request
+
+def sample_rate_throughput_measurer(args):
+    engine_args = AsyncEngineArgs.from_cli_args(args)
+    llm = AsyncLLMEngine.from_engine_args(engine_args)
+    async def single_request(sample):
+        sampling_params = SamplingParams(
+                temperature=0.0,
+                ignore_eos=True,
+                max_tokens=sample["output_len"],
+            )
+        request_id = random_uuid()
+        results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
+        async for _ in results_generator:
+            pass
+        return sample["output_len"]
+    return single_request
 

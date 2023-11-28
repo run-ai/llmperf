@@ -20,7 +20,7 @@ def prepare_tensor(name, input):
 def ttft_measurer(prompt, args):
     server = args.server
     model = args.model
-    def triton_wrapper():
+    def single_request():
         req = {
             "text_input": prompt,
             "max_tokens": 1,
@@ -30,7 +30,7 @@ def ttft_measurer(prompt, args):
         start = timer()
         _ = requests.post(f"{server}/v2/models/{model}/generate", json=req)
         return timer() - start
-    return triton_wrapper
+    return single_request
 
 def ttft_measurer(prompt, args):
     client = grpcclient.InferenceServerClient(url=args.server)
@@ -52,7 +52,7 @@ def ttft_measurer(prompt, args):
         prepare_tensor("beam_width", beam_width_data),
     ]
 
-    async def triton_wrapper():
+    async def single_request():
         user_data = UserData()
         i = 0
         start = timer()
@@ -80,14 +80,14 @@ def ttft_measurer(prompt, args):
             else:
                 result.as_numpy('text_output')
             return (timer() - start) / (i - 1)
-    return triton_wrapper
+    return single_request
 
 def rate_throughput_measurer(prompt, args):
     server = args.server
     model = args.model
     conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
     session = aiohttp.ClientSession(connector=conn)
-    async def triton_wrapper():
+    async def single_request():
         req = {
             "text_input": prompt,
             "max_tokens": args.output_tokens,
@@ -97,4 +97,21 @@ def rate_throughput_measurer(prompt, args):
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
             _ = await response.text()
         return args.output_tokens
-    return triton_wrapper
+    return single_request
+
+def sample_rate_throughput_measurer(args):
+    server = args.server
+    model = args.model
+    conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+    session = aiohttp.ClientSession(connector=conn)
+    async def single_request(sample):
+        req = {
+            "text_input": sample["prompt"],
+            "max_tokens": sample["output_len"],
+            "bad_words": "",
+            "stop_words": ""
+        }
+        async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
+            _ = await response.text()
+        return sample["output_len"]
+    return single_request
