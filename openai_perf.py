@@ -64,7 +64,7 @@ def rate_throughput_measurer(prompt, args):
                         n=1,
                         stream=True,
             )
-        for _ in completion:
+        async for _ in completion:
             pass
         return args.output_tokens
     return single_request
