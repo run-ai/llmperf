@@ -147,7 +147,7 @@ def run_rate_sampled_output_throughput(args):
     elif args.engine == "openai":
         measurer = openai_perf.sample_rate_throughput_measurer(args)
     elif args.engine == "tgi":
-        measurer = tgi_perf.sample_rate_output_throughput_measurer(args)
+        measurer = tgi_perf.sample_output_rate_throughput_measurer(args)
     elif args.engine == "triton":
         measurer = triton_perf.sample_rate_throughput_measurer(args)
     else:
