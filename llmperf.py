@@ -30,12 +30,12 @@ async def async_run_test_n_times(test, n):
         print(f"Iteration {i}: {value}")
     print(f"Average: {total/n}")
 
-async def send_request_periodically(task, qps, total):
+async def send_request_periodically(request, qps, total):
     tasks = []
     start = timer()
     for _ in range(math.floor(total/qps)):
         for _ in range(qps):
-            task = asyncio.create_task(task())
+            task = asyncio.create_task(request())
             tasks.append(task)
         await asyncio.sleep(1)
     results = await asyncio.gather(*tasks)
