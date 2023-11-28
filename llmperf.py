@@ -170,15 +170,7 @@ if __name__ == "__main__":
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     tpot_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
-
-    tpot_engine_parser = tpot_parser.add_subparsers(title="Engine", dest="engine", required=True)
-    tpot_vllm_parser = tpot_engine_parser.add_parser("vllm", help="vLLM Engine")
-    tpot_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
-    tpot_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
-    
-    tpot_openai_parser = tpot_engine_parser.add_parser("openai", help="OpenAI Engine")
-    tpot_openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
-    tpot_openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
+    add_engines_parser(tpot_parser)
 
     stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput in static batch")
     stb_parser.add_argument("--model", type=str, default="", help="The model.")
