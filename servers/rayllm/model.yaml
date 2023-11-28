@@ -6,11 +6,12 @@ deployment_config:
   ray_actor_options:
     resources: {}
 engine_config:
-  model_id: MODEL
+  model_id: NousResearch/Llama-2-7b-hf
   type: VLLMEngine
   engine_kwargs:
     trust_remote_code: true
-    dtype: PRECISION
+    max_num_seqs: 128
+    dtype: float16
   max_total_tokens: 4096
   generation:
     prompt_format:

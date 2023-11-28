@@ -279,16 +279,14 @@ public:
         std::optional<bool> enableTrtOverlap, std::shared_ptr<Recorder> recorder,
         std::optional<uint64_t> terminateReqId)
     {
-        mResponseCounter = 0;
         const TrtGptModelOptionalParams& optionalParams = TrtGptModelOptionalParams(
             maxNumSequences, maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap);
         mBatchManager = std::make_shared<GptManager>(
             trtEnginePath, modelType, maxBeamWidth, schedulerPolicy,
-            [this](int max_num_requests) { std::cout << "Num request to accept: " << max_num_requests << std::endl; return getInferenceRequests(max_num_requests); },
+            [this](int max_num_requests) { return getInferenceRequests(max_num_requests); },
             [this](uint64_t requestId, std::list<NamedTensor> response_tensors, bool final_response,
-                const std::string& errMsg) { if (final_response) { mResponseCounter++; } return sendResponse(requestId, response_tensors, final_response, errMsg); },
-            nullptr, 
-            [this](const std::string& jsonStats) {std::cout << "Received JSON stats: " << jsonStats << std::endl;},
+                const std::string& errMsg) { return sendResponse(requestId, response_tensors, final_response, errMsg); },
+            nullptr, nullptr,
             optionalParams, terminateReqId);
         mRecorder = recorder;
         mTerminateReqId = terminateReqId;
@@ -296,7 +294,6 @@ public:
 
     ~GptServer()
     {
-        std::cout << "Num Response Counter: " << mResponseCounter << std::endl;
         mWorkItemsQueue.clear();
     }
 
@@ -437,7 +434,6 @@ private:
     std::shared_ptr<Recorder> mRecorder;
     WorkItemsQueue mWorkItemsQueue;
     std::optional<uint64_t> mTerminateReqId;
-    int mResponseCounter;
 
 }; // class GptServer
 
@@ -468,7 +464,7 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
     std::string const& datasetPath, std::shared_ptr<nvinfer1::ILogger> const& logger,
     std::optional<int32_t> maxNumSequences, std::optional<int32_t> maxTokensInPagedKvCache,
     std::optional<float> kvCacheFreeGpuMemFraction, std::optional<bool> enableTrtOverlap,
-    batch_scheduler::SchedulerPolicy schedulerPolicy, std::chrono::milliseconds interval)
+    batch_scheduler::SchedulerPolicy schedulerPolicy, std::chrono::milliseconds interval, int samples_i)
 {
     auto const worldConfig = WorldConfig::mpi(*logger);
 
@@ -491,7 +487,7 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
     auto dataset = parseDataset(datasetPath);
     std::vector<std::vector<NamedTensor>> tensors_list;
     const auto num_samples = dataset.first.size();
-    for (int i = 0; i < num_samples; ++i)
+    for (int i = 0; i < samples_i; ++i)
     {
         const auto input_ids = dataset.first[i];
         const auto request_output_len = dataset.second[i];
@@ -549,6 +545,8 @@ int main(int argc, char* argv[])
         "max_tokens_in_paged_kvcache", "Max tokens in paged K-V Cache.", cxxopts::value<int>()->default_value("-1"));
     options.add_options()
         ("qps", "Queries per second", cxxopts::value<int>()->default_value("1"));
+    options.add_options()
+        ("samples", "Samples count to query", cxxopts::value<int>()->default_value("5000"));
     options.add_options()("kv_cache_free_gpu_mem_fraction", "K-V Cache Free Gpu Mem Fraction.",
         cxxopts::value<float>()->default_value("-1"));
     options.add_options()("scheduler_policy", "Choose scheduler policy between max_utilization/guaranteed_no_evict.",
@@ -570,6 +568,8 @@ int main(int argc, char* argv[])
     int qps = result["qps"].as<int>();
     int intervalInt = 1000 / qps;
     std::chrono::milliseconds interval = std::chrono::milliseconds(intervalInt);
+
+    int samples_i = result["samples"].as<int>();
 
     // Argument: Engine directory
     if (!result.count("engine_dir"))
@@ -665,7 +665,7 @@ int main(int argc, char* argv[])
     {
         benchmarkGptManager(result["model"].as<std::string>(), result["engine_dir"].as<std::string>(), type,
             datasetPath, logger, maxNumSequences, maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap,
-            schedulerPolicy, interval);
+            schedulerPolicy, interval, samples_i);
     }
     catch (const std::exception& e)
     {

@@ -19,7 +19,6 @@ from utils import utils
 MODEL_NAME = "ensemble"
 
 class UserData:
-
     def __init__(self):
         self._completed_requests = queue.Queue()
 
@@ -87,7 +86,6 @@ def measure(triton_client, inputs, request_id, num_iterations):
     print(f"Average for {num_iterations} runs: TTFT: {average_ttft_time} seconds, TPOT: {average_tpot_throughput} seconds")
 
 def test(triton_client, prompt, request_id):
-
     input0 = [[prompt]]
     input0_data = np.array(input0).astype(object)
     output0_len = np.ones_like(input0).astype(np.uint32) * FLAGS.output_len

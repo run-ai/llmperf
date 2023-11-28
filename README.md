@@ -90,6 +90,11 @@ python build.py --model_dir /app/tensorrt_llm/Llama-2-7b-hf/ \
 
 ```
 
+#### Triton - TRT-LLM
+```
+~/triton-trtllm$ docker run --rm -it --net host --shm-size=2g --ulimit memlock=-1 --ulimit stack=67108864 --gpus all -v /home/omer/triton-trtllm/model-repo/:/model-repo -v /home/omer/share/:/share nvcr.io/nvidia/tritonserver:23.10-trtllm-python-py3 tritonserver --model-repo=/model-repo/
+```
+
 #### Measurement
 
 ##### OpenAI compatible API (vLLM / RayLLM)
