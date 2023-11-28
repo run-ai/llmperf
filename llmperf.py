@@ -173,12 +173,13 @@ if __name__ == "__main__":
     stb_parser.add_argument("--batch_size", type=int, default=128, help="Number of sequences to batch")
 
     rth_parser = subparsers.add_parser("rate_throughput", help="Measure throughput with sending requests at constant rate")
+    rth_parser.add_argument("--model", type=str, default="", help="The model.")
+    rth_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     rth_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     rth_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     rth_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     rth_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
-    rth_parser.add_argument("--total_requests", type=int, default=128, help="Number of requests to send in total")
-    rth_parser = AsyncEngineArgs.add_cli_args(rth_parser)
+    rth_parser.add_argument("--batch_size", type=int, default=256, help="The batch size")
 
     rst_parser = subparsers.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
     rst_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
