@@ -86,8 +86,8 @@ def tpot_measurer(prompt, args):
 def rate_throughput_measurer(prompt, args):
     server = args.http_server
     model = args.model
-    conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
     async def single_request():
+        conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
         session = aiohttp.ClientSession(connector=conn)
         req = {
             "text_input": prompt,
