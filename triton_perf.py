@@ -58,6 +58,7 @@ def tpot_measurer(prompt, args):
         start = timer()
         def callback(user_data, result, error):
             nonlocal start
+            nonlocal i
             if error:
                 user_data._completed_requests.put(error)
             else:
