@@ -178,6 +178,13 @@ if __name__ == "__main__":
     rth_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
     rth_parser.add_argument("--total_requests", type=int, default=128, help="Number of requests to send in total")
     rth_parser = AsyncEngineArgs.add_cli_args(rth_parser)
+
+    rst_parser = subparsers.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
+    rst_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
+    rst_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
+    rst_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
+    rst_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
+    rst_parser = AsyncEngineArgs.add_cli_args(rst_parser)
     args = parser.parse_args()
 
 
