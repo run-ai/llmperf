@@ -139,6 +139,23 @@ def run_rate_sampled_throughput(args):
         return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
+def add_engines_parser(base_parser):
+    engine_parser = base_parser.add_subparsers(title="Engine", dest="engine", required=True)
+    vllm_parser = engine_parser.add_parser("vllm", help="vLLM Engine")
+    vllm_parser.add_argument("--model", type=str, default="", help="The model.")
+    vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+
+    openai_parser = engine_parser.add_parser("openai", help="OpenAI Engine")
+    openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
+    openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
+
+    triton_parser = engine_parser.add_parser("triton", help="Triton Engine")
+    triton_parser.add_argument("--triton_server", type=str, default="http://localhost:8000/", help="The Triton Server URL")
+
+    tgi_parser = engine_parser.add_parser("tgi", help="Text-generation-inference Engine")
+    tgi_parser.add_argument("--tgi_server", type=str, default="http://localhost:8000/", help="The TGI Server URL")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLMPerf tools to measure LLM performance")
 
@@ -147,28 +164,21 @@ if __name__ == "__main__":
     ttft_parser = test_parser.add_parser("ttft", help="Measure Time To First Token (TTFT)")
     ttft_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     ttft_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
-
-    ttft_engine_parser = ttft_parser.add_subparsers(title="Engine", dest="engine", required=True)
-    ttft_vllm_parser = ttft_engine_parser.add_parser("vllm", help="vLLM Engine")
-    ttft_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
-    ttft_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
-
-    ttft_openai_parser = ttft_engine_parser.add_parser("openai", help="OpenAI Engine")
-    ttft_openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
-    ttft_openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
-
-    ttft_triton_parser = ttft_engine_parser.add_parser("triton", help="Triton Engine")
-    ttft_triton_parser.add_argument("--triton_server", type=str, default="http://localhost:8000/", help="The OpenAI Server URL")
-
+    add_engines_parser(ttft_parser)
 
     tpot_parser = test_parser.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
-    tpot_parser.add_argument("--model", type=str, default="", help="The model.")
-    tpot_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
-    tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     tpot_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
-    tpot_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
-    tpot_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
+    tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
+
+    tpot_engine_parser = tpot_parser.add_subparsers(title="Engine", dest="engine", required=True)
+    tpot_vllm_parser = tpot_engine_parser.add_parser("vllm", help="vLLM Engine")
+    tpot_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
+    tpot_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    
+    tpot_openai_parser = tpot_engine_parser.add_parser("openai", help="OpenAI Engine")
+    tpot_openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
+    tpot_openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
 
     stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput in static batch")
     stb_parser.add_argument("--model", type=str, default="", help="The model.")

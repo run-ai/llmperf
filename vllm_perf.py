@@ -24,7 +24,7 @@ def ttft_measurer(prompt, args):
                 sampling_params=sampling_params,
                 )
         start = timer()
-        llm._run_engine(use_tqdm=True)
+        llm._run_engine(use_tqdm=False)
         return timer() - start
     return single_request
 
