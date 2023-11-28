@@ -32,7 +32,7 @@ def ttft_measurer(prompt, args):
         return timer() - start
     return single_request
 
-def ttft_measurer(prompt, args):
+def tpot_measurer(prompt, args):
     client = grpcclient.InferenceServerClient(url=args.server)
     input0 = [[prompt]]
     input0_data = np.array(input0).astype(object)
