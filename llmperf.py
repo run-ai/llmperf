@@ -156,8 +156,8 @@ if __name__ == "__main__":
 
 
     tpot_parser = subparsers.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
-    ttft_parser.add_argument("--model", type=str, default="", help="The model.")
-    ttft_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    tpot_parser.add_argument("--model", type=str, default="", help="The model.")
+    tpot_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     tpot_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
