@@ -33,3 +33,11 @@ def sample_rate_throughput_measurer(args):
         _ = await client.generate(sample["prompt"], max_new_tokens=sample["output_len"])
         return sample["output_len"]
     return single_request
+
+def sample_output_rate_throughput_measurer(args):
+    client = AsyncClient(args.server)
+    async def single_request(sample):
+        response = await client.generate(sample["prompt"])
+        print(response.details.generated_tokens)
+        return response.details.generated_tokens
+    return single_request

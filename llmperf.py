@@ -138,6 +138,26 @@ def run_rate_sampled_throughput(args):
         return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
+def run_rate_sampled_output_throughput(args):
+    with open(args.dataset, 'r') as file:
+        samples = json.load(file)
+    measurer = None
+    if args.engine == "vllm":
+        measurer = vllm_perf.sample_rate_throughput_measurer(args)
+    elif args.engine == "openai":
+        measurer = openai_perf.sample_rate_throughput_measurer(args)
+    elif args.engine == "tgi":
+        measurer = tgi_perf.sample_rate_output_throughput_measurer(args)
+    elif args.engine == "triton":
+        measurer = triton_perf.sample_rate_throughput_measurer(args)
+    else:
+        print(f"Rate sampled throughput test not implemented for {args.engine}")
+        return
+    
+    async def wrapper():
+        return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
+    asyncio.run(async_run_test_n_times(wrapper, args.iterations))
+
 def add_engines_parser(base_parser, vllm_batch_size = False):
     engine_parser = base_parser.add_subparsers(title="Engine", dest="engine", required=True)
     vllm_parser = engine_parser.add_parser("vllm", help="vLLM Engine")
@@ -199,6 +219,13 @@ if __name__ == "__main__":
     rst_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
     rst_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
     add_engines_parser(rst_parser, True)
+
+    rsot_parser = test_parser.add_parser("rate_sampled_output_throughput", help="Measure throughput with sending requests at constant rate")
+    rsot_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
+    rsot_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
+    rsot_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
+    rsot_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
+    add_engines_parser(rsot_parser, True)
     
     args = parser.parse_args()
 
@@ -213,3 +240,5 @@ if __name__ == "__main__":
         run_rate_throughput(args)
     elif args.test == "rate_sampled_throughput":
         run_rate_sampled_throughput(args)
+    elif args.test == "rate_sampled_output_throughput":
+        run_rate_sampled_output_throughput(args)
