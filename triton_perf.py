@@ -87,8 +87,8 @@ def rate_throughput_measurer(prompt, args):
     server = args.http_server
     model = args.model
     conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
-    session = aiohttp.ClientSession(connector=conn)
     async def single_request():
+        session = aiohttp.ClientSession(connector=conn)
         req = {
             "text_input": prompt,
             "max_tokens": args.output_tokens,
