@@ -156,12 +156,13 @@ if __name__ == "__main__":
 
 
     tpot_parser = subparsers.add_parser("tpot", help="Measure Time Per Output Token (TPOT)")
+    ttft_parser.add_argument("--model", type=str, default="", help="The model.")
+    ttft_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
     tpot_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     tpot_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     tpot_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
     tpot_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
-    tpot_parser = AsyncEngineArgs.add_cli_args(tpot_parser)
 
     stb_parser = subparsers.add_parser("static_batch_throughput", help="Measure throughput in static batch")
     stb_parser.add_argument("--model", type=str, default="", help="The model.")
