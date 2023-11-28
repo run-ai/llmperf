@@ -139,11 +139,13 @@ def run_rate_sampled_throughput(args):
         return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
-def add_engines_parser(base_parser):
+def add_engines_parser(base_parser, vllm_batch_size = False):
     engine_parser = base_parser.add_subparsers(title="Engine", dest="engine", required=True)
     vllm_parser = engine_parser.add_parser("vllm", help="vLLM Engine")
     vllm_parser.add_argument("--model", type=str, default="", help="The model.")
     vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    if vllm_batch_size:
+        vllm_parser.add_argument("--batch_size", type=int, default=128, help="The batch size.")
 
     openai_parser = engine_parser.add_parser("openai", help="OpenAI Engine")
     openai_parser.add_argument("--api_key", type=str, default="API_KEY", help="The OpenAI API Key")
@@ -190,8 +192,7 @@ if __name__ == "__main__":
     rth_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     rth_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
     rth_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
-    rth_parser.add_argument("--batch_size", type=int, default=256, help="The batch size")
-    add_engines_parser(rth_parser)
+    add_engines_parser(rth_parser, True)
 
     rst_parser = test_parser.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
     rst_parser.add_argument("--model", type=str, default="", help="The model.")
