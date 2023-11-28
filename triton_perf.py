@@ -28,7 +28,8 @@ def ttft_measurer(prompt, args):
             "stop_words": ""
         }
         start = timer()
-        _ = requests.post(f"{server}/v2/models/{model}/generate", json=req)
+        res = requests.post(f"{server}/v2/models/{model}/generate", json=req)
+        print(res)
         return timer() - start
     return single_request
 
