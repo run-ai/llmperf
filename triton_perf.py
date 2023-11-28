@@ -97,8 +97,8 @@ def rate_throughput_measurer(prompt, args):
         }
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
             _ = await response.text()
-        session.close()
-        conn.close()
+        await session.close()
+        await conn.close()
         return args.output_tokens
     return single_request
 
@@ -116,7 +116,7 @@ def sample_rate_throughput_measurer(args):
         }
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
             _ = await response.text()
-        session.close()
-        conn.close()
+        await session.close()
+        await conn.close()
         return sample["output_len"]
     return single_request
