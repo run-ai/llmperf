@@ -150,6 +150,7 @@ def add_engines_parser(base_parser):
     openai_parser.add_argument("--api_base", type=str, default="http://localhost:8000/v1", help="The OpenAI Server URL")
 
     triton_parser = engine_parser.add_parser("triton", help="Triton Engine")
+    triton_parser.add_argument("--model", type=str, default="ensemble", help="The model.")
     triton_parser.add_argument("--server", type=str, default="http://localhost:8000/", help="The Triton Server URL")
 
     tgi_parser = engine_parser.add_parser("tgi", help="Text-generation-inference Engine")
