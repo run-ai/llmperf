@@ -196,5 +196,5 @@ if __name__ == "__main__":
         run_static_batch(args)
     elif args.command == "rate_throughput":
         run_rate_throughput(args)
-    elif args.command == "rate_sampled-throughput":
+    elif args.command == "rate_sampled_throughput":
         run_rate_sampled_throughput(args)
