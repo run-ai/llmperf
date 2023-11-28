@@ -153,7 +153,7 @@ def add_engines_parser(base_parser):
     triton_parser.add_argument("--server", type=str, default="http://localhost:8000/", help="The Triton Server URL")
 
     tgi_parser = engine_parser.add_parser("tgi", help="Text-generation-inference Engine")
-    tgi_parser.add_argument("--server", type=str, default="http://localhost:8000/", help="The TGI Server URL")
+    tgi_parser.add_argument("--server", type=str, default="http://127.0.0.1:80/", help="The TGI Server URL")
 
 
 if __name__ == "__main__":
