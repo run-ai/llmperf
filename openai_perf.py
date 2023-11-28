@@ -85,7 +85,7 @@ def sample_rate_throughput_measurer(args):
                         n=1,
                         stream=True,
             )
-        for _ in completion:
+        async for _ in completion:
             pass
         return sample["output_len"]
     return single_request
