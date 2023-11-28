@@ -148,7 +148,7 @@ if __name__ == "__main__":
     ttft_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     ttft_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
 
-    ttft_engine_parser = ttft_parser.add_subparsers("Engine", dest="engine", required=True)
+    ttft_engine_parser = ttft_parser.add_subparsers(title="Engine", dest="engine", required=True)
     ttft_vllm_parser = ttft_engine_parser.add_parser("vllm", help="vLLM Engine")
     ttft_vllm_parser.add_argument("--model", type=str, default="", help="The model.")
     ttft_vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
