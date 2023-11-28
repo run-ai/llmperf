@@ -28,14 +28,14 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    client = AsyncClient(args.server)
+    client = AsyncClient(args.server, timeout=1440)
     async def single_request(sample):
         _ = await client.generate(sample["prompt"], max_new_tokens=sample["output_len"])
         return sample["output_len"]
     return single_request
 
 def sample_output_rate_throughput_measurer(args):
-    client = AsyncClient(args.server)
+    client = AsyncClient(args.server, timeout=1440)
     async def single_request(sample):
         response = await client.generate(sample["prompt"])
         print(response.details.generated_tokens)
