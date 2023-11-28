@@ -32,7 +32,6 @@ def tpot_measurer(prompt, args):
     engineArgs = AsyncEngineArgs(args.model)
     engineArgs.trust_remote_code = True
     engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
     engineArgs.disable_log_stats = True
     engineArgs.disable_log_requests = True
     llm = AsyncLLMEngine.from_engine_args(engineArgs)
