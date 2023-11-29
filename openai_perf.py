@@ -2,11 +2,7 @@ import openai
 from timeit import default_timer as timer
 
 def ttft_measurer(prompt, args):
-    openai.api_key = args.api_key
-    openai.api_base = args.api_base
-    models = openai.Model.list()
-    model = models["data"][0]["id"]
-
+    model = get_model(args)
     def single_request():
         start = timer()
         completion = openai.Completion.create(
@@ -24,11 +20,7 @@ def ttft_measurer(prompt, args):
     return single_request
 
 def tpot_measurer(prompt, args):
-    openai.api_key = args.api_key
-    openai.api_base = args.api_base
-    models = openai.Model.list()
-    model = models["data"][0]["id"]
-
+    model = get_model(args)
     async def single_request():
         start = timer()
         completion = openai.Completion.create(
@@ -49,11 +41,7 @@ def tpot_measurer(prompt, args):
     return single_request
 
 def rate_throughput_measurer(prompt, args):
-    openai.api_key = args.api_key
-    openai.api_base = args.api_base
-    models = openai.Model.list()
-    model = models["data"][0]["id"]
-
+    model = get_model(args)
     async def single_request():
         completion = await openai.Completion.acreate(
             model=model,
@@ -70,11 +58,7 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    openai.api_key = args.api_key
-    openai.api_base = args.api_base
-    models = openai.Model.list()
-    model = models["data"][0]["id"]
-
+    model = get_model(args)
     async def single_request(sample):
         completion = await openai.Completion.acreate(
             model=model,
@@ -89,3 +73,27 @@ def sample_rate_throughput_measurer(args):
             pass
         return sample["output_len"]
     return single_request
+
+def sample_output_rate_throughput_measurer(args):
+    model = get_model(args)
+    async def single_request(sample):
+        completion = await openai.Completion.acreate(
+            model=model,
+                        echo=False,
+                        prompt=sample["prompt"],
+                        temperature=1,
+                        top_k=15,
+                        n=1,
+                        stream=False,
+            )
+        response = None
+        async for res in completion:
+            response = res
+        return response.usage.completion_tokens
+    return single_request
+
+def get_model(args):
+    openai.api_key = args.api_key
+    openai.api_base = args.api_base
+    models = openai.Model.list()
+    return models["data"][0]["id"]

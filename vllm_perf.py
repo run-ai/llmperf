@@ -80,13 +80,7 @@ def static_batch_measurer(prompt, args):
     return single_request
 
 def rate_throughput_measurer(prompt, args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
 
     async def single_request():
         sampling_params = SamplingParams(
@@ -102,13 +96,7 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
     async def single_request(sample):
         sampling_params = SamplingParams(
                 temperature=0.0,
@@ -123,13 +111,7 @@ def sample_rate_throughput_measurer(args):
     return single_request
 
 def sample_output_rate_throughput_measurer(args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
     async def single_request(sample):
         sampling_params = SamplingParams(
                 top_k=15,
@@ -142,3 +124,11 @@ def sample_output_rate_throughput_measurer(args):
         return i
     return single_request
 
+def init_async_llm(args):
+    engineArgs = AsyncEngineArgs(args.model)
+    engineArgs.trust_remote_code = True
+    engineArgs.dtype = args.dtype
+    engineArgs.max_num_seqs = args.batch_size
+    engineArgs.disable_log_stats = True
+    engineArgs.disable_log_requests = True
+    return AsyncLLMEngine.from_engine_args(engineArgs)

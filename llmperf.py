@@ -1,7 +1,7 @@
 import argparse
 import openai_perf
-import vllm_perf
 import tgi_perf
+import vllm_perf
 import triton_perf
 import asyncio
 import math
@@ -146,6 +146,8 @@ def run_rate_sampled_output_throughput(args):
         measurer = vllm_perf.sample_output_rate_throughput_measurer(args)
     elif args.engine == "tgi":
         measurer = tgi_perf.sample_output_rate_throughput_measurer(args)
+    elif args.engine == "openai":
+        measurer = openai_perf.sample_output_rate_throughput_measurer(args)
     else:
         print(f"Rate sampled throughput test not implemented for {args.engine}")
         return
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     tpot_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     add_engines_parser(tpot_parser)
 
-    stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput in static batch")
+    stb_parser = test_parser.add_parser("static_batch_throughput", help="Measure throughput for static batch")
     stb_parser.add_argument("--prompt_file", type=str, help="Path to a file containing the prompt.")
     stb_parser.add_argument("--iterations", type=int, default=10, help="The iterations parameter.")
     stb_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")

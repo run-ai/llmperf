@@ -1,6 +1,8 @@
 from text_generation import Client, AsyncClient
 from timeit import default_timer as timer
 
+TIMEOUT_24_HOURS = 1440
+
 def ttft_measurer(prompt, args):
     client = Client(args.server)
     def single_request():
@@ -21,23 +23,22 @@ def tpot_measurer(prompt, args):
     return single_request
 
 def rate_throughput_measurer(prompt, args):
-    client = AsyncClient(args.server)
+    client = AsyncClient(args.server, timeout=TIMEOUT_24_HOURS)
     async def single_request():
         _ = await client.generate(prompt, max_new_tokens=args.output_tokens)
         return args.output_tokens
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    client = AsyncClient(args.server, timeout=1440)
+    client = AsyncClient(args.server, timeout=TIMEOUT_24_HOURS)
     async def single_request(sample):
         _ = await client.generate(sample["prompt"], max_new_tokens=sample["output_len"])
         return sample["output_len"]
     return single_request
 
 def sample_output_rate_throughput_measurer(args):
-    client = AsyncClient(args.server, timeout=1440)
+    client = AsyncClient(args.server, timeout=TIMEOUT_24_HOURS)
     async def single_request(sample):
         response = await client.generate(sample["prompt"])
-        print(response.details.generated_tokens)
         return response.details.generated_tokens
     return single_request
