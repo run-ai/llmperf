@@ -122,3 +122,25 @@ def sample_rate_throughput_measurer(args):
         return sample["output_len"]
     return single_request
 
+def sample_output_rate_throughput_measurer(args):
+    engineArgs = AsyncEngineArgs(args.model)
+    engineArgs.trust_remote_code = True
+    engineArgs.dtype = args.dtype
+    engineArgs.max_num_seqs = args.batch_size
+    engineArgs.disable_log_stats = True
+    engineArgs.disable_log_requests = True
+    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    async def single_request(sample):
+        sampling_params = SamplingParams(
+                top_k=15,
+            )
+        request_id = random_uuid()
+        results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
+        i = 0
+        async for res in results_generator:
+            print(res)
+            i += 1
+        print(i)
+        return sample["output_len"]
+    return single_request
+
