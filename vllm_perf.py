@@ -138,9 +138,7 @@ def sample_output_rate_throughput_measurer(args):
         results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
         i = 0
         async for res in results_generator:
-            print(res)
             i += 1
-        print(i)
-        return sample["output_len"]
+        return i
     return single_request
 
