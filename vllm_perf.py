@@ -115,6 +115,7 @@ def sample_output_rate_throughput_measurer(args):
     async def single_request(sample):
         sampling_params = SamplingParams(
                 top_k=15,
+                max_tokens=4096,
             )
         request_id = random_uuid()
         results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
