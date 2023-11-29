@@ -143,13 +143,9 @@ def run_rate_sampled_output_throughput(args):
         samples = json.load(file)
     measurer = None
     if args.engine == "vllm":
-        measurer = vllm_perf.sample_rate_throughput_measurer(args)
-    elif args.engine == "openai":
-        measurer = openai_perf.sample_rate_throughput_measurer(args)
+        measurer = vllm_perf.sample_output_rate_throughput_measurer(args)
     elif args.engine == "tgi":
         measurer = tgi_perf.sample_output_rate_throughput_measurer(args)
-    elif args.engine == "triton":
-        measurer = triton_perf.sample_rate_throughput_measurer(args)
     else:
         print(f"Rate sampled throughput test not implemented for {args.engine}")
         return
