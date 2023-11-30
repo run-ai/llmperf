@@ -146,11 +146,12 @@ def sample_output_rate_throughput_measurer(args):
         nonlocal global_id
         user_data = UserData()
         
+        n_inputs = inputs
         input0 = [[sample["prompt"]]]
         input0_data = np.array(input0).astype(object)
         output0_len = np.ones_like(input0).astype(np.uint32) * 2048
-        inputs.append(prepare_tensor("text_input", input0_data))
-        inputs.append(prepare_tensor("max_tokens", output0_len))
+        n_inputs.append(prepare_tensor("text_input", input0_data))
+        n_inputs.append(prepare_tensor("max_tokens", output0_len))
 
         i = 0
         def callback(user_data, result, error):
