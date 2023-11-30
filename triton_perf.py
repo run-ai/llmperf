@@ -143,6 +143,7 @@ def sample_output_rate_throughput_measurer(args):
     ]
     global_id = 0
     async def single_request(sample):
+        nonlocal global_id
         user_data = UserData()
         
         input0 = [[sample["prompt"]]]
