@@ -146,7 +146,7 @@ def sample_output_rate_throughput_measurer(args):
         nonlocal global_id
         user_data = UserData()
         
-        n_inputs = inputs
+        n_inputs = inputs.copy()
         input0 = [[sample["prompt"]]]
         input0_data = np.array(input0).astype(object)
         output0_len = np.ones_like(input0).astype(np.uint32) * 2048
@@ -162,7 +162,7 @@ def sample_output_rate_throughput_measurer(args):
                 i += 1
                 user_data._completed_requests.put(result)
         client.start_stream(callback=partial(callback, user_data))
-        client.async_stream_infer(args.model, inputs, request_id=str(global_id))
+        client.async_stream_infer(args.model, n_inputs, request_id=str(global_id))
         global_id += 1
         client.stop_stream()
         while True:
