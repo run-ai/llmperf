@@ -129,9 +129,9 @@ def sample_output_rate_throughput_measurer(args):
     streaming_data = np.array(streaming, dtype=bool)
     beam_width = [[1]]
     beam_width_data = np.array(beam_width, dtype=np.uint32)
-    temperature = [[args.temperature]]
+    temperature = [[1]]
     temperature_data = np.array(temperature, dtype=np.float32)
-    top_k = [[args.top_k]]
+    top_k = [[10]]
     top_k_data = np.array(top_k, dtype=np.uint32)
     inputs = [
         prepare_tensor("bad_words", bad_words_list),
