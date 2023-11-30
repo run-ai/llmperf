@@ -114,13 +114,14 @@ def sample_output_rate_throughput_measurer(args):
     llm = init_async_llm(args)
     async def single_request(sample):
         sampling_params = SamplingParams(
-                top_k=15,
+                top_k=args.top_k,
+                temperature=args.temperature,
                 max_tokens=4096,
             )
         request_id = random_uuid()
         results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
         i = 0
-        async for res in results_generator:
+        async for _ in results_generator:
             i += 1
         return i
     return single_request

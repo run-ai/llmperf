@@ -120,3 +120,82 @@ def sample_rate_throughput_measurer(args):
         await conn.close()
         return sample["output_len"]
     return single_request
+
+def sample_output_rate_throughput_measurer(args):
+    server = args.http_server
+    model = args.model
+    async def single_request(sample):
+        conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+        session = aiohttp.ClientSession(connector=conn)
+        req = {
+            "text_input": sample["prompt"],
+            "max_tokens": 4096,
+            "temperature": args.temperature,
+            "top_k": args.top_k,
+            "bad_words": "",
+            "stop_words": ""
+        }
+        async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
+            _ = await response.text()
+        await session.close()
+        await conn.close()
+        return sample["output_len"]
+    return single_request
+
+
+def tpot_measure2(prompt, args):
+    client = grpcclient.InferenceServerClient(url=args.grpc_server)
+    bad_words_list = np.array([[""]], dtype=object)
+    stop_words_list = np.array([[""]], dtype=object)
+    streaming = [[True]]
+    streaming_data = np.array(streaming, dtype=bool)
+    beam_width = [[1]]
+    beam_width_data = np.array(beam_width, dtype=np.uint32)
+    temperature = [[args.temperature]]
+    temperature_data = np.array(temperature, dtype=np.float32)
+    top_k = [[args.top_k]]
+    top_k_data = np.array(top_k, dtype=np.uint32)
+    inputs = [
+        prepare_tensor("bad_words", bad_words_list),
+        prepare_tensor("stop_words", stop_words_list),
+        prepare_tensor("stream", streaming_data),
+        prepare_tensor("beam_width", beam_width_data),
+        prepare_tensor("temperature", temperature_data),
+        prepare_tensor("top_k", top_k_data),
+    ]
+
+    async def single_request(sample):
+        user_data = UserData()
+        
+        input0 = [[sample["prompt"]]]
+        input0_data = np.array(input0).astype(object)
+        output0_len = np.ones_like(input0).astype(np.uint32) * 4096
+        inputs.append(prepare_tensor("text_input", input0_data))
+        inputs.append(prepare_tensor("max_tokens", output0_len))
+
+        i = 0
+        def callback(user_data, result, error):
+            nonlocal i
+            if error:
+                user_data._completed_requests.put(error)
+            else:
+                i += 1
+                user_data._completed_requests.put(result)
+        client.start_stream(callback=partial(callback, user_data))
+        client.async_stream_infer(args.model, inputs, request_id=str(1))
+        client.stop_stream()
+        while True:
+            try:
+                result = user_data._completed_requests.get(block=False)
+            except Exception:
+                break
+
+            if type(result) == InferenceServerException:
+                print("Received an error from server:")
+                print(result)
+            else:
+                result.as_numpy('text_output')
+            print(i)
+            return i
+    return single_request
+

@@ -148,6 +148,8 @@ def run_rate_sampled_output_throughput(args):
         measurer = tgi_perf.sample_output_rate_throughput_measurer(args)
     elif args.engine == "openai":
         measurer = openai_perf.sample_output_rate_throughput_measurer(args)
+    elif args.engine == "triton":
+        measurer = triton_perf.sample_output_rate_throughput_measurer(args)
     else:
         print(f"Rate sampled throughput test not implemented for {args.engine}")
         return
@@ -223,6 +225,8 @@ if __name__ == "__main__":
     rsot_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
     rsot_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
     rsot_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
+    rsot_parser.add_argument("--temperature", type=float, default=1, help="Temperature in sampling phase")
+    rsot_parser.add_argument("--top_k", type=int, default=15, help="Tok K in sampling phase")
     add_engines_parser(rsot_parser, True)
     
     args = parser.parse_args()
