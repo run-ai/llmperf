@@ -141,7 +141,7 @@ def sample_output_rate_throughput_measurer(args):
         prepare_tensor("temperature", temperature_data),
         prepare_tensor("top_k", top_k_data),
     ]
-
+    global_id = 0
     async def single_request(sample):
         user_data = UserData()
         
@@ -160,7 +160,8 @@ def sample_output_rate_throughput_measurer(args):
                 i += 1
                 user_data._completed_requests.put(result)
         client.start_stream(callback=partial(callback, user_data))
-        client.async_stream_infer(args.model, inputs, request_id=str(1))
+        client.async_stream_infer(args.model, inputs, request_id=str(global_id))
+        global_id += 1
         client.stop_stream()
         while True:
             try:
