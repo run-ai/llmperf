@@ -121,7 +121,7 @@ def sample_rate_throughput_measurer(args):
         return sample["output_len"]
     return single_request
 
-def sample_output_rate_throughput_measurer(prompt, args):
+def sample_output_rate_throughput_measurer(args):
     client = grpcclient.InferenceServerClient(url=args.grpc_server)
     bad_words_list = np.array([[""]], dtype=object)
     stop_words_list = np.array([[""]], dtype=object)
