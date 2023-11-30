@@ -121,29 +121,7 @@ def sample_rate_throughput_measurer(args):
         return sample["output_len"]
     return single_request
 
-def sample_output_rate_throughput_measurer(args):
-    server = args.http_server
-    model = args.model
-    async def single_request(sample):
-        conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
-        session = aiohttp.ClientSession(connector=conn)
-        req = {
-            "text_input": sample["prompt"],
-            "max_tokens": 4096,
-            "temperature": args.temperature,
-            "top_k": args.top_k,
-            "bad_words": "",
-            "stop_words": ""
-        }
-        async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
-            _ = await response.text()
-        await session.close()
-        await conn.close()
-        return sample["output_len"]
-    return single_request
-
-
-def tpot_measure2(prompt, args):
+def sample_output_rate_throughput_measurer(prompt, args):
     client = grpcclient.InferenceServerClient(url=args.grpc_server)
     bad_words_list = np.array([[""]], dtype=object)
     stop_words_list = np.array([[""]], dtype=object)
@@ -169,7 +147,7 @@ def tpot_measure2(prompt, args):
         
         input0 = [[sample["prompt"]]]
         input0_data = np.array(input0).astype(object)
-        output0_len = np.ones_like(input0).astype(np.uint32) * 4096
+        output0_len = np.ones_like(input0).astype(np.uint32) * 2048
         inputs.append(prepare_tensor("text_input", input0_data))
         inputs.append(prepare_tensor("max_tokens", output0_len))
 
