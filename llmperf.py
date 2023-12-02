@@ -29,20 +29,20 @@ async def async_run_test_n_times(test, n):
         print(f"Iteration {i}: {value}")
     print(f"Average: {total/n}")
 
-async def send_request_periodically(request, qps, total):
+async def send_request_periodically(request, qps, t, total):
     tasks = []
     start = timer()
     for _ in range(math.floor(total/qps)):
         for _ in range(qps):
             task = asyncio.create_task(request())
             tasks.append(task)
-        await asyncio.sleep(1)
+        await asyncio.sleep(t)
     results = await asyncio.gather(*tasks)
     total_tokens = sum(results)
     elapsed = timer() - start
     return total_tokens / elapsed
 
-async def send_sampled_request_periodically(request, samples, qps, total):
+async def send_sampled_request_periodically(request, samples, qps, t, total):
     tasks = []
     start = timer()
     i = 0
@@ -51,7 +51,7 @@ async def send_sampled_request_periodically(request, samples, qps, total):
             task = asyncio.create_task(request(samples[i]))
             tasks.append(task)
             i += 1
-        await asyncio.sleep(1)
+        await asyncio.sleep(t)
     results = await asyncio.gather(*tasks)
     total_tokens = sum(results)
     elapsed = timer() - start
@@ -115,7 +115,7 @@ def run_rate_throughput(args):
         return
     
     async def wrapper():
-        return await send_request_periodically(measurer, args.qps, args.total_requests)
+        return await send_request_periodically(measurer, args.qps, args.t, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
 def run_rate_sampled_throughput(args):
@@ -135,7 +135,7 @@ def run_rate_sampled_throughput(args):
         return
     
     async def wrapper():
-        return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
+        return await send_sampled_request_periodically(measurer, samples, args.qps, args.t, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
 def run_rate_sampled_output_throughput(args):
@@ -155,7 +155,7 @@ def run_rate_sampled_output_throughput(args):
         return
     
     async def wrapper():
-        return await send_sampled_request_periodically(measurer, samples, args.qps, args.total_requests)
+        return await send_sampled_request_periodically(measurer, samples, args.qps, args.t, args.total_requests)
     asyncio.run(async_run_test_n_times(wrapper, args.iterations))
 
 def add_engines_parser(base_parser, vllm_batch_size = False):
@@ -210,20 +210,23 @@ if __name__ == "__main__":
     rth_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
     rth_parser.add_argument("--output_tokens", type=int, default=128, help="Number of tokens to retrieve")
     rth_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
+    rth_parser.add_argument("--t", type=int, default=1, help="Time frame to send the QPS amount requests")
     rth_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
     add_engines_parser(rth_parser, True)
 
     rst_parser = test_parser.add_parser("rate_sampled_throughput", help="Measure throughput with sending requests at constant rate")
     rst_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
     rst_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
-    rst_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
+    rst_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second (Per t)")
+    rst_parser.add_argument("--t", type=int, default=1, help="Time frame to send the QPS amount requests")
     rst_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
     add_engines_parser(rst_parser, True)
 
     rsot_parser = test_parser.add_parser("rate_sampled_output_throughput", help="Measure throughput with sending requests at constant rate")
     rsot_parser.add_argument("--dataset", type=str, help="Path to a file containing the dataset.")
     rsot_parser.add_argument("--iterations", type=int, default=1, help="The iterations parameter.")
-    rsot_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second")
+    rsot_parser.add_argument("--qps", type=int, default=4, help="Number of queries to send per second (Per t)")
+    rsot_parser.add_argument("--t", type=int, default=1, help="Time frame to send the QPS amount requests")
     rsot_parser.add_argument("--total_requests", type=int, default=5000, help="Number of requests to send in total")
     rsot_parser.add_argument("--temperature", type=float, default=1, help="Temperature in sampling phase")
     rsot_parser.add_argument("--top_k", type=int, default=15, help="Tok K in sampling phase")
