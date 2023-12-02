@@ -163,6 +163,7 @@ def add_engines_parser(base_parser, vllm_batch_size = False):
     vllm_parser = engine_parser.add_parser("vllm", help="vLLM Engine")
     vllm_parser.add_argument("--model", type=str, default="", help="The model.")
     vllm_parser.add_argument("--dtype", type=str, default="float16", help="The dtype.")
+    vllm_parser.add_argument("--gpu_memory_utilization", type=float, default=0.9, help="GPU Memory fraction")
     if vllm_batch_size:
         vllm_parser.add_argument("--batch_size", type=int, default=128, help="The batch size.")
 

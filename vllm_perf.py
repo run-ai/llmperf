@@ -131,6 +131,7 @@ def init_async_llm(args):
     engineArgs.trust_remote_code = True
     engineArgs.dtype = args.dtype
     engineArgs.max_num_seqs = args.batch_size
+    engineArgs.gpu_memory_utilization = args.gpu_memory_utilization
     engineArgs.disable_log_stats = True
     engineArgs.disable_log_requests = True
     return AsyncLLMEngine.from_engine_args(engineArgs)

@@ -39,6 +39,6 @@ def sample_rate_throughput_measurer(args):
 def sample_output_rate_throughput_measurer(args):
     client = AsyncClient(args.server, timeout=TIMEOUT_24_HOURS)
     async def single_request(sample):
-        response = await client.generate(sample["prompt"], temperature=args.temperature, top_k=args.top_k)
+        response = await client.generate(sample["prompt"], max_new_tokens=2048, temperature=args.temperature, top_k=args.top_k)
         return response.details.generated_tokens
     return single_request
