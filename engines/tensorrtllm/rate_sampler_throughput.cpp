@@ -189,10 +189,12 @@ struct BenchInfo
         , outputLength(_outputLength)
         , start(_start)
     {
+        this->actOutputLength = 0;
     }
 
     int inputLength;
     int outputLength;
+    int actOutputLength;
     std::chrono::time_point<std::chrono::steady_clock> start;
     std::chrono::time_point<std::chrono::steady_clock> end;
     float latency; // millisecond
@@ -225,12 +227,13 @@ public:
         mRequestBenchInfos[requestId] = BenchInfo(inputLength, outputLength, start);
     }
 
-    void recordEnd(uint64_t requestId)
+    void recordEnd(uint64_t requestId, int outputLen)
     {
         mRequestBenchInfos[requestId].end = std::chrono::steady_clock::now();
         mRequestBenchInfos[requestId].latency = std::chrono::duration<float, std::milli>(
             mRequestBenchInfos[requestId].end - mRequestBenchInfos[requestId].start)
                                                     .count();
+        mRequestBenchInfos[requestId].actOutputLength = outputLen;
     }
 
     void calculateMetrics()
@@ -240,13 +243,16 @@ public:
         mSeqThroughput = mNumSamples / (mTotalLatency / 1000);
         mAvgSeqLatency = 0;
         int totalOutputTokens = 0;
+        int actTotalOutputTokens = 0;
         for (auto reqInfo : mRequestBenchInfos)
         {
             mAvgSeqLatency += reqInfo.second.latency;
             totalOutputTokens += reqInfo.second.outputLength;
+            actTotalOutputTokens += reqInfo.second.actOutputLength;
         }
         mAvgSeqLatency /= mNumSamples;
         mTokenThroughput = totalOutputTokens / (mTotalLatency / 1000);
+        mActTokenThroughput = actTotalOutputTokens / (mTotalLatency / 1000);
     }
 
     void report()
@@ -256,6 +262,7 @@ public:
         printf("[BENCHMARK] seq_throughput(seq/sec) %.2f\n", mSeqThroughput);
         printf("[BENCHMARK] avg_sequence_latency(ms) %.2f\n", mAvgSeqLatency);
         printf("[BENCHMARK] token_throughput(token/sec) %.2f\n", mTokenThroughput);
+        printf("[BENCHMARK] act_token_throughput(token/sec) %.2f\n", mActTokenThroughput);
     }
 
 private:
@@ -268,6 +275,7 @@ private:
     float mSeqThroughput;
     float mAvgSeqLatency;
     float mTokenThroughput;
+    float mActTokenThroughput;
 }; // class Recorder
 
 class GptServer
@@ -419,8 +427,14 @@ public:
         {
             if (final_response)
             {
+                int outputLen = 0;
+                for (auto& tensor: response_tensors)
+                {
+                    outputLen = tensor.tensor->getSize();
+                }
+                std::cout << outputLen << std::endl;
                 mWorkItemsQueue.markFinished(requestId);
-                mRecorder->recordEnd(requestId);
+                mRecorder->recordEnd(requestId, outputLen);
             }
         }
         catch (const std::exception& e)
@@ -464,7 +478,7 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
     std::string const& datasetPath, std::shared_ptr<nvinfer1::ILogger> const& logger,
     std::optional<int32_t> maxNumSequences, std::optional<int32_t> maxTokensInPagedKvCache,
     std::optional<float> kvCacheFreeGpuMemFraction, std::optional<bool> enableTrtOverlap,
-    batch_scheduler::SchedulerPolicy schedulerPolicy, std::chrono::milliseconds interval, int samples_i)
+    batch_scheduler::SchedulerPolicy schedulerPolicy, std::chrono::milliseconds interval, int samples_i, int temperature, int top_k)
 {
     auto const worldConfig = WorldConfig::mpi(*logger);
 
@@ -487,15 +501,22 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
     auto dataset = parseDataset(datasetPath);
     std::vector<std::vector<NamedTensor>> tensors_list;
     const auto num_samples = dataset.first.size();
+    int endId = 2;
     for (int i = 0; i < samples_i; ++i)
     {
         const auto input_ids = dataset.first[i];
-        const auto request_output_len = dataset.second[i];
+        const auto request_output_len = 2048;
         std::vector<int64_t> input_ids_shape = {1, static_cast<int64_t>(input_ids.size())};
         auto input_ids_tensor = NamedTensor(nvinfer1::DataType::kINT32, input_ids_shape, "input_ids", input_ids.data());
         auto request_output_len_tensor
             = NamedTensor(nvinfer1::DataType::kINT32, {1, 1}, "request_output_len", &request_output_len);
-        std::vector<NamedTensor> tensors = {input_ids_tensor, request_output_len_tensor};
+        auto request_temperature_len_tensor
+            = NamedTensor(nvinfer1::DataType::kINT32, {1}, "temperature", &temperature);
+        auto request_top_k_len_tensor
+            = NamedTensor(nvinfer1::DataType::kINT32, {1}, "runtime_top_k", &top_k);
+        auto request_end_id_len_tensor
+            = NamedTensor(nvinfer1::DataType::kINT32, {1}, "end_id", &endId);
+        std::vector<NamedTensor> tensors = {input_ids_tensor, request_output_len_tensor, request_temperature_len_tensor, request_top_k_len_tensor, request_end_id_len_tensor};
         tensors_list.push_back(tensors);
     }
 
@@ -546,6 +567,12 @@ int main(int argc, char* argv[])
     options.add_options()
         ("qps", "Queries per second", cxxopts::value<int>()->default_value("1"));
     options.add_options()
+        ("time", "Time frame to send QPS", cxxopts::value<int>()->default_value("1"));
+    options.add_options()
+        ("temperature", "Temperature in request sampling", cxxopts::value<int>()->default_value("1"));
+    options.add_options()
+        ("top_k", "Top K in request sampling", cxxopts::value<int>()->default_value("1"));
+    options.add_options()
         ("samples", "Samples count to query", cxxopts::value<int>()->default_value("5000"));
     options.add_options()("kv_cache_free_gpu_mem_fraction", "K-V Cache Free Gpu Mem Fraction.",
         cxxopts::value<float>()->default_value("-1"));
@@ -566,8 +593,11 @@ int main(int argc, char* argv[])
     }
 
     int qps = result["qps"].as<int>();
-    int intervalInt = 1000 / qps;
+    int t = result["time"].as<int>();
+    int intervalInt = (t * 1000) / qps;
     std::chrono::milliseconds interval = std::chrono::milliseconds(intervalInt);
+    int temperature = result["temperature"].as<int>();
+    int top_k = result["top_k"].as<int>();
 
     int samples_i = result["samples"].as<int>();
 
@@ -665,7 +695,7 @@ int main(int argc, char* argv[])
     {
         benchmarkGptManager(result["model"].as<std::string>(), result["engine_dir"].as<std::string>(), type,
             datasetPath, logger, maxNumSequences, maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap,
-            schedulerPolicy, interval, samples_i);
+            schedulerPolicy, interval, samples_i, temperature, top_k);
     }
     catch (const std::exception& e)
     {

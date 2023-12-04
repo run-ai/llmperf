@@ -82,14 +82,12 @@ def sample_output_rate_throughput_measurer(args):
                         echo=False,
                         prompt=sample["prompt"],
                         temperature=1,
+                        max_tokens=2048,
                         top_k=15,
                         n=1,
                         stream=False,
             )
-        response = None
-        async for res in completion:
-            response = res
-        return response.usage.completion_tokens
+        return completion.usage.completion_tokens
     return single_request
 
 def get_model(args):
