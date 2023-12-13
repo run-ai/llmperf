@@ -80,13 +80,7 @@ def static_batch_measurer(prompt, args):
     return single_request
 
 def rate_throughput_measurer(prompt, args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
 
     async def single_request():
         sampling_params = SamplingParams(
@@ -102,13 +96,7 @@ def rate_throughput_measurer(prompt, args):
     return single_request
 
 def sample_rate_throughput_measurer(args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.max_num_seqs = args.batch_size
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
     async def single_request(sample):
         sampling_params = SamplingParams(
                 temperature=0.0,
@@ -122,3 +110,28 @@ def sample_rate_throughput_measurer(args):
         return sample["output_len"]
     return single_request
 
+def sample_output_rate_throughput_measurer(args):
+    llm = init_async_llm(args)
+    async def single_request(sample):
+        sampling_params = SamplingParams(
+                top_k=args.top_k,
+                temperature=args.temperature,
+                max_tokens=4096,
+            )
+        request_id = random_uuid()
+        results_generator = llm.generate(sample["prompt"], sampling_params, request_id)
+        i = 0
+        async for _ in results_generator:
+            i += 1
+        return i
+    return single_request
+
+def init_async_llm(args):
+    engineArgs = AsyncEngineArgs(args.model)
+    engineArgs.trust_remote_code = True
+    engineArgs.dtype = args.dtype
+    engineArgs.max_num_seqs = args.batch_size
+    engineArgs.gpu_memory_utilization = args.gpu_memory_utilization
+    engineArgs.disable_log_stats = True
+    engineArgs.disable_log_requests = True
+    return AsyncLLMEngine.from_engine_args(engineArgs)
