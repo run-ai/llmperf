@@ -129,10 +129,12 @@ def sample_output_rate_throughput_measurer(args):
     streaming_data = np.array(streaming, dtype=bool)
     beam_width = [[1]]
     beam_width_data = np.array(beam_width, dtype=np.uint32)
-    temperature = [[1]]
+    temperature = [[args.temperature]]
     temperature_data = np.array(temperature, dtype=np.float32)
-    top_k = [[10]]
+    top_k = [[args.top_k]]
     top_k_data = np.array(top_k, dtype=np.uint32)
+    eos = [[2]]
+    eos_data = np.array(eos, dtype=np.uint32)
     inputs = [
         prepare_tensor("bad_words", bad_words_list),
         prepare_tensor("stop_words", stop_words_list),
@@ -140,6 +142,7 @@ def sample_output_rate_throughput_measurer(args):
         prepare_tensor("beam_width", beam_width_data),
         prepare_tensor("temperature", temperature_data),
         prepare_tensor("top_k", top_k_data),
+        prepare_tensor("end_id", eos_data),
     ]
     global_id = 0
     async def single_request(sample):
@@ -179,4 +182,3 @@ def sample_output_rate_throughput_measurer(args):
             print(i)
             return i
     return single_request
-

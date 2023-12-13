@@ -219,7 +219,7 @@ public:
     {
         const auto& input_ids_tensor = request->getInputTensor("input_ids");
         std::vector<int64_t> tensorShape(input_ids_tensor->getShape().nbDims);
-        auto const inputLength = tensorShape[1];
+        auto const inputLength = input_ids_tensor->getSize();
         auto const [specified, outputLength]
             = request->getScalarValueFromTensor<int>("request_output_len", {1, 1}, false);
         assert(specified);
@@ -233,7 +233,7 @@ public:
         mRequestBenchInfos[requestId].latency = std::chrono::duration<float, std::milli>(
             mRequestBenchInfos[requestId].end - mRequestBenchInfos[requestId].start)
                                                     .count();
-        mRequestBenchInfos[requestId].actOutputLength = outputLen;
+        mRequestBenchInfos[requestId].actOutputLength = outputLen - mRequestBenchInfos[requestId].inputLength;
     }
 
     void calculateMetrics()
@@ -432,7 +432,6 @@ public:
                 {
                     outputLen = tensor.tensor->getSize();
                 }
-                std::cout << outputLen << std::endl;
                 mWorkItemsQueue.markFinished(requestId);
                 mRecorder->recordEnd(requestId, outputLen);
             }
