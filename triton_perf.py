@@ -167,7 +167,7 @@ def sample_output_rate_throughput_measurer(args):
         client.start_stream(callback=partial(callback, user_data))
         client.async_stream_infer(args.model, n_inputs, request_id=str(global_id))
         global_id += 1
-        client.stop_stream()
+        #client.stop_stream()
         while True:
             try:
                 result = user_data._completed_requests.get(block=False)
@@ -179,6 +179,5 @@ def sample_output_rate_throughput_measurer(args):
                 print(result)
             else:
                 result.as_numpy('text_output')
-            print(i)
-            return i
+                return i
     return single_request
