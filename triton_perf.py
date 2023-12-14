@@ -127,7 +127,7 @@ def sample_output_rate_throughput_measurer(args):
     model = args.model
     async def single_request(sample):
         conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
-        session = aiohttp.ClientSession(connector=conn)
+        session = aiohttp.ClientSession(connector=conn, timeout=aiohttp.ClientTimeout(total=30000))
         req = {
             "text_input": sample["prompt"],
             "max_tokens": sample["output_len"],
@@ -137,8 +137,8 @@ def sample_output_rate_throughput_measurer(args):
         res = None
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
             txt = await response.text()
-            res = json.load(txt)
+            res = json.loads(txt)
         await session.close()
         await conn.close()
-        return res["len"]
+        return res["len"] - sample["intput_len"]
     return single_request
