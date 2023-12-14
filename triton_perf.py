@@ -138,5 +138,5 @@ def sample_output_rate_throughput_measurer(args):
             res = await response.text()
         await session.close()
         await conn.close()
-        return res["output_len"]
+        return res["len"]
     return single_request
