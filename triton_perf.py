@@ -6,6 +6,7 @@ from timeit import default_timer as timer
 import numpy as np
 from functools import partial
 import queue
+import json
 
 class UserData:
     def __init__(self):
@@ -135,7 +136,8 @@ def sample_output_rate_throughput_measurer(args):
         }
         res = None
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
-            res = await response.text()
+            txt = await response.text()
+            res = json.load(txt)
         await session.close()
         await conn.close()
         return res["len"]
