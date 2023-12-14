@@ -120,3 +120,22 @@ def sample_rate_throughput_measurer(args):
         await conn.close()
         return sample["output_len"]
     return single_request
+
+def sample_output_rate_throughput_measurer(args):
+    server = args.http_server
+    model = args.model
+    async def single_request(sample):
+        conn = aiohttp.TCPConnector(limit=None, ttl_dns_cache=300)
+        session = aiohttp.ClientSession(connector=conn)
+        req = {
+            "text_input": sample["prompt"],
+            "max_tokens": sample["output_len"],
+            "bad_words": "",
+            "stop_words": ""
+        }
+        async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
+            _ = await response.text()
+        await session.close()
+        await conn.close()
+        return sample["output_len"]
+    return single_request
