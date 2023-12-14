@@ -133,9 +133,10 @@ def sample_output_rate_throughput_measurer(args):
             "bad_words": "",
             "stop_words": ""
         }
+        res = None
         async with session.post(f"{server}/v2/models/{model}/generate", json=req) as response:
-            _ = await response.text()
+            res = await response.text()
         await session.close()
         await conn.close()
-        return sample["output_len"]
+        return res["output_len"]
     return single_request
