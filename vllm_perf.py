@@ -29,12 +29,7 @@ def ttft_measurer(prompt, args):
     return single_request
 
 def tpot_measurer(prompt, args):
-    engineArgs = AsyncEngineArgs(args.model)
-    engineArgs.trust_remote_code = True
-    engineArgs.dtype = args.dtype
-    engineArgs.disable_log_stats = True
-    engineArgs.disable_log_requests = True
-    llm = AsyncLLMEngine.from_engine_args(engineArgs)
+    llm = init_async_llm(args)
 
     async def single_request():
         sampling_params = SamplingParams(
