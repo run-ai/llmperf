@@ -284,7 +284,7 @@ public:
     GptServer(std::filesystem::path const& trtEnginePath, TrtGptModelType modelType, int32_t maxBeamWidth,
         batch_scheduler::SchedulerPolicy schedulerPolicy, std::optional<int32_t> maxNumSequences,
         std::optional<int32_t> maxTokensInPagedKvCache, std::optional<float> kvCacheFreeGpuMemFraction,
-        std::optional<bool> enableTrtOverlap, std::shared_ptr<Recorder> recorder,
+        std::optional<bool> enableTrtOverlap, std::shared_ptr<Recorder> warmupRecorder,
         std::optional<uint64_t> terminateReqId)
     {
         const TrtGptModelOptionalParams& optionalParams = TrtGptModelOptionalParams(
@@ -296,7 +296,7 @@ public:
                 const std::string& errMsg) { return sendResponse(requestId, response_tensors, final_response, errMsg); },
             nullptr, nullptr,
             optionalParams, terminateReqId);
-        mRecorder = recorder;
+        mRecorder = warmupRecorder;
         mTerminateReqId = terminateReqId;
     }
 
@@ -442,6 +442,11 @@ public:
         }
     }
 
+    void setRecorder(std::shared_ptr<Recorder> recorder)
+    {
+        mRecorder = recorder;
+    }
+
 private:
     std::shared_ptr<GptManager> mBatchManager;
     std::shared_ptr<Recorder> mRecorder;
@@ -501,6 +506,7 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
     std::vector<std::vector<NamedTensor>> tensors_list;
     const auto num_samples = dataset.first.size();
     int endId = 2;
+    int padId = 2;
     for (int i = 0; i < samples_i; ++i)
     {
         const auto input_ids = dataset.first[i];
@@ -513,20 +519,35 @@ void benchmarkGptManager(std::string const& modelName, std::filesystem::path con
             = NamedTensor(nvinfer1::DataType::kINT32, {1}, "temperature", &temperature);
         auto request_top_k_len_tensor
             = NamedTensor(nvinfer1::DataType::kINT32, {1}, "runtime_top_k", &top_k);
-        auto request_end_id_len_tensor
+        auto request_end_id_tensor
             = NamedTensor(nvinfer1::DataType::kINT32, {1}, "end_id", &endId);
-        std::vector<NamedTensor> tensors = {input_ids_tensor, request_output_len_tensor, request_temperature_len_tensor, request_top_k_len_tensor, request_end_id_len_tensor};
+        auto request_pad_id_tensor
+            = NamedTensor(nvinfer1::DataType::kINT32, {1}, "pad_id", &padId);
+        std::vector<NamedTensor> tensors = {input_ids_tensor, request_output_len_tensor, request_temperature_len_tensor, request_top_k_len_tensor, request_end_id_tensor, request_pad_id_tensor};
         tensors_list.push_back(tensors);
     }
 
     const int maxBeamWidth = 1;
-    auto recorder = std::make_shared<Recorder>();
+    auto warmupRecorder = std::make_shared<Recorder>();
     uint64_t terminateReqId = num_samples + 1;
     auto gptServer = std::make_shared<GptServer>(engineDir, modelType, maxBeamWidth, schedulerPolicy, maxNumSequences,
-        maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap, recorder, terminateReqId);
+        maxTokensInPagedKvCache, kvCacheFreeGpuMemFraction, enableTrtOverlap, warmupRecorder, terminateReqId);
 
     if (worldConfig.getRank() == 0)
     {
+        warmupRecorder->initialize();
+        for (int i = 0; i < (tensors_list.size() / 10); ++i)
+        {
+            gptServer->enqueue(tensors_list[i], 1 + i, false);
+            std::this_thread::sleep_for(interval);
+        }
+        gptServer->waitForEmpty();
+        warmupRecorder->finalize();
+        warmupRecorder->calculateMetrics();
+        warmupRecorder->report();
+
+        auto recorder = std::make_shared<Recorder>();
+        gptServer->setRecorder(recorder);
         recorder->initialize();
         for (int i = 0; i < tensors_list.size(); ++i)
         {
