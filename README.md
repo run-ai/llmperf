@@ -1,8 +1,15 @@
 # LLMPerf - Language Model Performance Measurement
 
-## Introduction
+LLMPerf is a tool for measuring the throughput and latency performance of large language models (LLMs) such as Llama 2, GPT-3, or similar models. LLMPerf provides a framework for conducting performance measurements and benchmarking on these models using following frameworks:
 
-LLMPerf is a tool for measuring the performance of large language models (LLMs) such as Llama 2, GPT-3, or similar models. Language models have become increasingly important in various natural language processing tasks, and it's essential to evaluate their performance accurately. LLMPerf provides a framework for conducting performance measurements and benchmarking on these models.
+|Type of the framework | Framework |
+| --- | --- |
+| Engine | [vLLM,](https://github.com/vllm-project/vllm) <be>[TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) |
+| Engine & Server | [TGI,](https://github.com/huggingface/text-generation-inference) <be>[Triton with TensorRT-LLM,](https://github.com/triton-inference-server) <be>[RayLLM with vLLM](https://github.com/ray-project/ray-llm)|
+
+## Our Findings
+
+For our benchmarking results with these frameworks, please refer to [our whitepaper](https://pages.run.ai/hubfs/PDFs/Serving-Large-Language-Models-Run-ai-Benchmarking-Study.pdf).
 
 ## Features
 
@@ -40,14 +47,16 @@ LLMPerf is a tool for measuring the performance of large language models (LLMs) 
 
 ### Usage
 
-#### Run models
+#### Run benchmarking experiments
 
 ##### vLLM
 ```
-python3 -m vllm.entrypoints.openai.api_server --model [MODEL] --trust-remote-code --dtype [PRECISION]
+# Benchmarking time per output token using vLLM
+python llmperf.py tpot --prompt_file input_examples/llama2/128_tokens --iterations 10 --output_tokens 128 vllm --model NousResearch/Llama-2-7b-chat-hf --dtype float16
 ```
 
 ##### RayLLM
+
 ```
 docker run -it --gpus all --shm-size=15gb -p 8000:8000 anyscale/aviary:latest bash
 ray start --head
@@ -58,37 +67,27 @@ aviary run --model model.yaml
 ```
 
 ##### TensorRT-LLM
-```
-# Prepare for compilation
-git clone https://github.com/NVIDIA/TensorRT-LLM.git
-cd TensorRT-LLM
-git submodule update --init --recursive
-git lfs install
-git lfs pull
 
-# Compile and build TensorRT-LLM docker
-make -C docker release_build
-
-# Compile engine
-docker run -it --gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 tensorrt_llm/release bash
-git lfs install
-git clone MODEL
-mkdir engine
-cd examples/llama/
-python build.py --model_dir /app/tensorrt_llm/Llama-2-7b-hf/ \
-                --dtype PERCISION \
-                --remove_input_padding \
-                --use_gpt_attention_plugin PERCISION \
-                --enable_context_fmha \
-                --use_gemm_plugin PERCISION \
-                --max_output_len 2048 \
-                --max_input_len 2048 \
-                --max_batch_size 32 \
-                --use_inflight_batching \
-                --paged_kv_cache \
-                --output_dir /app/tensorrt_llm/engine/
+To be able to run experiments, TensorRT-LLM needs to be installed on your machine and the engine needs to be created. Please refer to [this GitHub repository](https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/installation.md) for these steps. 
 
 ```
+# Benchmarking time per output token using TensorRT-LLM
+./benchmarks/gptSessionBenchmark \
+    --model llama \
+    --engine_dir "/app/tensorrt_llm/engine/" \
+    --batch_size "32" \
+    --input_output_len "128,128"
+
+
+# Benchmarking throughput using TensorRT-LLM
+./benchmarks/gptManagerBenchmark \
+    --model llama \
+    --engine_dir "/app/tensorrt_llm/engine/" \
+    --batch_size "32" \
+    --input_output_len "128,128"
+```
+
+For more information about the settings and possible flags, please refer to [the documentation](https://github.com/NVIDIA/TensorRT-LLM/blob/rel/benchmarks/cpp/README.md).
 
 #### Triton - TRT-LLM
 ```
